@@ -25,6 +25,7 @@ build.
 """
 
 import logging
+from typing import TYPE_CHECKING, cast
 
 from dotenv import load_dotenv
 
@@ -52,6 +53,9 @@ from livekit.agents.voice.io import TimedString  # noqa: E402
 from livekit.plugins import deepgram, openai, rime, silero  # noqa: E402
 
 from app.config import get_settings  # noqa: E402
+
+if TYPE_CHECKING:
+    from openai.types import ReasoningEffort
 from app.panel import director  # noqa: E402
 from app.panel.floor import word_from_timing  # noqa: E402
 from app.panel.roster import PANEL, opening_line  # noqa: E402
@@ -193,8 +197,13 @@ class PanelAgent(Agent):
                 for item in getattr(handle, "chat_items", [])
                 if isinstance(item, ChatMessage) and item.role == "assistant" and item.text_content
             ).strip()
+            heard_ms = self.interview.heard_ms()
             if spoken and self.interview.interviewer_finished(generation, spoken):
-                logger.info("committed gen %s: %s", generation, spoken)
+                logger.info("committed gen %s after %sms of audio: %s", generation, heard_ms, spoken)
+                if heard_ms == 0:
+                    # Rime reported no word timings, so an interruption during
+                    # this turn could not have been placed. Worth knowing.
+                    logger.warning("no word timings for gen %s; check RIME_USE_WEBSOCKET", generation)
 
         event.speech_handle.add_done_callback(committed)
 
@@ -248,6 +257,8 @@ def build_session(settings: object | None = None) -> AgentSession[None]:
             model=config.llm_model,
             base_url=config.llm_base_url or NOT_GIVEN,
             api_key=config.llm_api_key or NOT_GIVEN,
+            max_completion_tokens=config.llm_max_tokens,
+            reasoning_effort=cast("ReasoningEffort", config.llm_reasoning_effort or None),
         ),
         tts=rime.TTS(
             model=config.rime_model or DEFAULT_MODEL,

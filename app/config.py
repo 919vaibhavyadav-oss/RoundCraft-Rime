@@ -38,6 +38,16 @@ class Settings(BaseSettings):
     llm_base_url: str = ""
     llm_api_key: str = ""
     llm_model: str = ""
+    # Groq's free tier caps output tokens per minute, and it rejects a request
+    # outright when the model's default output budget exceeds that cap - not
+    # when the answer actually would. Sending no ceiling asked for 1089 tokens
+    # against a limit of 1000 and got a 429 before generating a word. An
+    # interview question is around 30 tokens.
+    llm_max_tokens: int = 150
+    # Qwen and gpt-oss spend output tokens on thinking that the candidate never
+    # hears, against that same cap. Asking one question needs no deliberation,
+    # and turning it off roughly halved the tokens per turn in testing.
+    llm_reasoning_effort: str = "none"
 
     def missing(self) -> list[str]:
         """Which credentials are absent, so startup can fail with a useful message."""
