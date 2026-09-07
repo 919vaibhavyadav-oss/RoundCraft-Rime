@@ -20,15 +20,24 @@ turn so it can never arrive late in the next interviewer's voice.
 
 import logging
 
-from livekit import agents
-from livekit.agents import Agent, AgentSession, RoomInputOptions
-from livekit.plugins import deepgram, openai, rime, silero
+from dotenv import load_dotenv
 
-from app.config import get_settings
-from app.panel import director
-from app.panel.floor import FloorGuard, SpokenWord
-from app.panel.roster import PANEL
-from app.panel.voices import DEFAULT_LANG, DEFAULT_MODEL, voice_for
+# LiveKit's worker reads LIVEKIT_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET from
+# the process environment rather than through our Settings object, and the
+# plugins do the same for their own vendor keys. Loading .env here, before the
+# CLI starts, is what makes a local run work without exporting six variables by
+# hand. In deployment the environment already carries them and this is a no-op.
+load_dotenv()
+
+from livekit import agents  # noqa: E402
+from livekit.agents import Agent, AgentSession, RoomInputOptions  # noqa: E402
+from livekit.plugins import deepgram, openai, rime, silero  # noqa: E402
+
+from app.config import get_settings  # noqa: E402
+from app.panel import director  # noqa: E402
+from app.panel.floor import FloorGuard, SpokenWord  # noqa: E402
+from app.panel.roster import PANEL  # noqa: E402
+from app.panel.voices import DEFAULT_LANG, DEFAULT_MODEL, voice_for  # noqa: E402
 
 logger = logging.getLogger("roundcraft")
 
