@@ -128,7 +128,13 @@ def check_deepgram(key: str) -> tuple[bool, str]:
     return response.status_code < 400, f"Deepgram returned {response.status_code}"
 
 
-def check_llm(base_url: str, key: str) -> tuple[bool, str]:
+def check_llm(base_url: str, key: str, model: str) -> tuple[bool, str]:
+    """Check the key works *and* that this account can actually see the model.
+
+    A new account often carries a different model list, so a key that
+    authenticates fine can still fail later inside a voice session. Cheaper to
+    find out here.
+    """
     url = (base_url or "https://api.groq.com/openai/v1").rstrip("/") + "/models"
     try:
         response = httpx.get(url, headers={"Authorization": f"Bearer {key}"}, timeout=15)
@@ -136,7 +142,31 @@ def check_llm(base_url: str, key: str) -> tuple[bool, str]:
         return False, f"could not reach the model provider ({type(exc).__name__})"
     if response.status_code in (401, 403):
         return False, "the model provider rejected the key"
-    return response.status_code < 400, f"model provider returned {response.status_code}"
+    if response.status_code >= 400:
+        return False, f"model provider returned {response.status_code}"
+
+    try:
+        available = {
+            str(item.get("id", "")) for item in response.json().get("data", []) if isinstance(item, dict)
+        }
+    except ValueError:
+        return False, "the model list was not JSON"
+    available.discard("")
+
+    if not model or is_placeholder(model):
+        return False, f"LLM_MODEL is not set. This account offers: {_sample(available)}"
+    if model not in available:
+        return False, f"this account cannot see '{model}'. It offers: {_sample(available)}"
+    return True, f"key works and '{model}' is available"
+
+
+def _sample(names: set[str], limit: int = 6) -> str:
+    """A few real model ids, so a wrong one can be corrected without a browser."""
+    if not names:
+        return "no models listed"
+    shown = sorted(names)[:limit]
+    more = len(names) - len(shown)
+    return ", ".join(shown) + (f", and {more} more" if more > 0 else "")
 
 
 def check_livekit(url: str) -> tuple[bool, str]:
@@ -166,7 +196,12 @@ def main() -> int:
     results = [
         ("Rime", *check_rime(values["RIME_API_KEY"])),
         ("Deepgram", *check_deepgram(values["DEEPGRAM_API_KEY"])),
-        ("Model provider", *check_llm(values.get("LLM_BASE_URL", ""), values["LLM_API_KEY"])),
+        (
+            "Model provider",
+            *check_llm(
+                values.get("LLM_BASE_URL", ""), values["LLM_API_KEY"], values.get("LLM_MODEL", "")
+            ),
+        ),
         ("LiveKit", *check_livekit(values["LIVEKIT_URL"])),
     ]
     for name, ok, detail in results:
