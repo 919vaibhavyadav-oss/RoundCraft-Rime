@@ -181,9 +181,12 @@ class PanelAgent(Agent):
         def committed(done: object) -> None:
             handle = done
             if getattr(handle, "interrupted", False):
-                # The barge-in path owns this turn; truncating it here would
-                # race the transcript that `on_user_turn_completed` writes.
-                logger.info("speech interrupted at gen %s", generation)
+                # Not necessarily a barge-in. A handle also reports interrupted
+                # when it was generated speculatively and thrown away, or when
+                # LiveKit later judges the interruption false and resumes. The
+                # truthful signal is the floor still being held when the
+                # candidate's turn commits, so truncation lives there.
+                logger.debug("speech handle discarded at gen %s", generation)
                 return
             spoken = " ".join(
                 item.text_content
@@ -257,6 +260,13 @@ def build_session(settings: object | None = None) -> AgentSession[None]:
             use_websocket=config.rime_use_websocket,
         ),
         vad=silero.VAD.load(),
+        # Preemptive generation fires an LLM call on every partial transcript
+        # and discards it if the candidate keeps talking - up to three per turn
+        # by default. A first live session showed it generating full interview
+        # questions from fragments like "on MX", so each answer cost four calls
+        # rather than one. We are on a free tier, and an interviewer who thinks
+        # for a moment before speaking is not a defect in this product.
+        turn_handling={"preemptive_generation": {"enabled": False}},
     )
 
 
