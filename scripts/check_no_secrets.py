@@ -23,6 +23,11 @@ HAS_DIGIT = re.compile(r"[0-9]")
 
 SCANNED_SUFFIXES = {".py", ".md", ".toml", ".yml", ".yaml", ".json", ".txt", ".sh", ".ts", ".tsx"}
 
+# A line may opt out, for the rare case where a key-shaped string is the point --
+# this scanner's own fixtures, for instance. Deliberate and visible in review,
+# which is the only kind of exception worth having.
+ALLOW_MARKER = "allow-secret-shape"
+
 # Words that mark a string as deliberately fake or structural rather than secret.
 INNOCENT = (
     "your_",
@@ -72,7 +77,7 @@ def main() -> int:
         except OSError:
             continue
         for number, line in enumerate(text.splitlines(), start=1):
-            if line.lstrip().startswith(("http://", "https://")):
+            if line.lstrip().startswith(("http://", "https://")) or ALLOW_MARKER in line:
                 continue
             for token in CANDIDATE.findall(line):
                 if looks_like_a_key(token):

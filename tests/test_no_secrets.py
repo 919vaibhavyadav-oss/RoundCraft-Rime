@@ -9,7 +9,7 @@ from scripts.check_no_secrets import looks_like_a_key
 
 def test_it_catches_a_key_shaped_string() -> None:
     """A synthetic string with a credential's shape: mixed case, digits, long."""
-    assert looks_like_a_key("Qv7mKp2xTz9bNw4hLr6sJd1fGy8cVa3e") is True
+    assert looks_like_a_key("Qv7mKp2xTz9bNw4hLr6sJd1fGy8cVa3e") is True  # allow-secret-shape
 
 
 def test_it_ignores_a_rule_of_dashes() -> None:
@@ -19,6 +19,13 @@ def test_it_ignores_a_rule_of_dashes() -> None:
 def test_it_ignores_long_identifiers() -> None:
     assert looks_like_a_key("interview_configs_profession_check") is False
     assert looks_like_a_key("RIME_API_KEY_PLACEHOLDER") is False
+
+
+def test_a_line_can_opt_out_when_the_shape_is_the_point() -> None:
+    """The scanner's own fixtures need an exception; it has to be explicit."""
+    from scripts.check_no_secrets import ALLOW_MARKER
+
+    assert ALLOW_MARKER == "allow-secret-shape"
 
 
 def test_it_ignores_documented_placeholders() -> None:
