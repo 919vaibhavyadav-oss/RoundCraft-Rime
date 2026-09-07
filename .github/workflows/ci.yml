@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  secrets:
+    name: No credentials in the tree
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv python install 3.12
+      - name: Nothing key-shaped anywhere in the tree
+        # A submission that exposes a live credential is not eligible for
+        # judging, so this fails the build rather than warning.
+        run: uv run --no-project python scripts/check_no_secrets.py
+
+  checks:
+    name: Lint, types, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --all-extras
+      - run: uv run ruff check .
+      - run: uv run mypy app
+      - name: Acceptance test for the hard voice problem
+        # Named separately so a judge reproducing the claim can see it pass.
+        run: uv run pytest tests/test_floor.py -q
+      - run: uv run pytest -q

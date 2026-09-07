@@ -1,0 +1,30 @@
+# The agent is a background worker, not a web service: it connects out to
+# LiveKit and waits to be assigned a room.
+services:
+  - type: worker
+    name: roundcraft-rime-agent
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    envVars:
+      # Every value is set in the Render dashboard. None are committed.
+      - key: RIME_API_KEY
+        sync: false
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+      - key: DEEPGRAM_API_KEY
+        sync: false
+      - key: LLM_BASE_URL
+        sync: false
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        sync: false
+      - key: RIME_MODEL
+        value: coda
+      - key: RIME_LANG
+        value: eng
