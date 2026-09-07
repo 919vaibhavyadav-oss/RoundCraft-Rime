@@ -14,7 +14,7 @@ what is tested.
 """
 
 from app.panel.floor import FloorGuard, SpokenWord, word_from_timing
-from app.panel.roster import PANEL
+from app.panel.roster import PANEL, _join_names, opening_line
 from app.panel.session import InterviewSession
 
 
@@ -132,3 +132,28 @@ class TestPanelOpening:
         decision = session.candidate_said("We moved retention by 4 percent with an experiment.")
 
         assert decision.speaker.id == "analytics"
+
+
+class TestOpeningLine:
+    """The greeting is spoken, not generated, so its wording is ours to pin.
+
+    The model cannot produce this turn at all: a request carrying only system
+    messages is rejected by the chat template with "No user query found in
+    messages", because there is no candidate turn yet to answer.
+    """
+
+    def test_it_names_the_lead_and_the_rest_of_the_panel(self) -> None:
+        line = opening_line()
+        for member in PANEL:
+            assert member.name in line
+
+    def test_it_asks_the_candidate_to_start(self) -> None:
+        assert "walk me through" in opening_line().lower()
+
+    def test_names_read_the_way_a_person_says_them(self) -> None:
+        assert _join_names(["a"]) == "a"
+        assert _join_names(["a", "b"]) == "a and b"
+        assert _join_names(["a", "b", "c"]) == "a, b and c"
+
+    def test_an_empty_list_joins_to_nothing(self) -> None:
+        assert _join_names([]) == ""

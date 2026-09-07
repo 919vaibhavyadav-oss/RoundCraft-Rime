@@ -67,3 +67,24 @@ BY_ID: dict[str, Interviewer] = {member.id: member for member in PANEL}
 def interviewer(panelist_id: str) -> Interviewer:
     """Resolve an interviewer, defaulting to the first rather than failing a turn."""
     return BY_ID.get(panelist_id, PANEL[0])
+
+
+def _join_names(parts: list[str]) -> str:
+    """Join names the way a person reads them aloud: "a, b and c"."""
+    if len(parts) <= 1:
+        return "".join(parts)
+    return f"{', '.join(parts[:-1])} and {parts[-1]}"
+
+
+def opening_line() -> str:
+    """What the hiring manager says before the candidate has spoken."""
+    lead, *rest = PANEL
+    if not rest:
+        return f"Hi, I'm {lead.name}. Walk me through a product you shipped recently."
+    colleagues = _join_names(
+        [f"{member.name} on {member.competency.replace('_', ' ')}" for member in rest]
+    )
+    return (
+        f"Hi, I'm {lead.name}, and I'm leading this panel with {colleagues}. "
+        "To get us started, walk me through a product you shipped recently."
+    )

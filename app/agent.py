@@ -45,7 +45,6 @@ from livekit.agents import (  # noqa: E402
     ChatContext,
     ChatMessage,
     ModelSettings,
-    RoomInputOptions,
     SpeechCreatedEvent,
     StopResponse,
 )
@@ -55,7 +54,7 @@ from livekit.plugins import deepgram, openai, rime, silero  # noqa: E402
 from app.config import get_settings  # noqa: E402
 from app.panel import director  # noqa: E402
 from app.panel.floor import word_from_timing  # noqa: E402
-from app.panel.roster import PANEL  # noqa: E402
+from app.panel.roster import PANEL, opening_line  # noqa: E402
 from app.panel.session import InterviewSession  # noqa: E402
 from app.panel.voices import DEFAULT_LANG, DEFAULT_MODEL, voice_for  # noqa: E402
 
@@ -98,6 +97,12 @@ class PanelAgent(Agent):
         A panel that joins in silence reads as broken. The hiring manager opens,
         in their own voice, and the floor is taken in their name so the very
         first sentence is interruptible on the same terms as every later one.
+
+        Spoken rather than generated. Asking the model for this turn sends a
+        request carrying only system messages, and the chat template rejects
+        that outright with "No user query found in messages" - there is no
+        candidate turn yet for it to answer. A fixed greeting also means every
+        take of the demo opens identically, and costs nothing.
         """
         decision = self.interview.panel_opened()
         self._switch_voice(decision.speaker.id)
@@ -106,7 +111,7 @@ class PanelAgent(Agent):
             decision.speaker.name,
             self.interview.generation,
         )
-        self.session.generate_reply(instructions=turn_instruction(decision))
+        self.session.say(opening_line())
 
     # -- the candidate's turn ------------------------------------------------
 
@@ -272,11 +277,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     session = build_session()
     session.on("speech_created", agent.watch_speech)
 
-    await session.start(
-        room=ctx.room,
-        agent=agent,
-        room_input_options=RoomInputOptions(),
-    )
+    await session.start(room=ctx.room, agent=agent)
 
 
 if __name__ == "__main__":
