@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "An AI interview panel that shares one voice session, with Rime as the primary spoken output."
 requires-python = ">=3.12"
 dependencies = [
-  "livekit-agents[deepgram,rime,silero,turn-detector]>=1.0,<2",
+  # The openai extra supplies the OpenAI-compatible LLM client, which is how we
+  # talk to Groq. Rime is the text-to-speech and the reason this project exists.
+  "livekit-agents[deepgram,openai,rime,silero,turn-detector]>=1.0,<2",
   "pydantic-settings>=2.10,<3",
   "httpx>=0.28,<1",
   "python-dotenv>=1.0,<2",
