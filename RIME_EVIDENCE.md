@@ -42,7 +42,7 @@ When the candidate interrupts an interviewer mid-sentence:
 Run:
 
 ```bash
-pytest tests/test_floor.py -q
+pytest tests/test_floor.py tests/test_interruption_journey.py -q
 ```
 
 The test covers the claim clause by clause:
@@ -56,6 +56,20 @@ The test covers the claim clause by clause:
 | Boundaries: before first word, after last | `test_an_interrupt_before_the_first_word_leaves_nothing_heard`, `test_an_interrupt_after_the_last_word_is_not_a_mid_sentence_cut` |
 | A stale release cannot clear a live speaker | `test_a_stale_release_cannot_clear_the_current_speaker` |
 | Handovers never reuse a generation | `test_each_handover_is_a_new_generation` |
+
+And end to end, over a whole scripted interview, in
+`tests/test_interruption_journey.py` — because the failure this guards against
+is an interaction between three components that are each individually correct:
+
+| Clause | Test |
+| --- | --- |
+| The transcript holds only what was heard | `test_the_transcript_holds_only_what_the_candidate_heard` |
+| The abandoned answer cannot be committed late | `test_the_abandoned_answer_cannot_be_committed_afterwards` |
+| It cannot land in the next interviewer's voice | `test_the_abandoned_answer_cannot_land_in_the_next_interviewers_voice` |
+| The director reads the truncated answer | `test_the_next_interviewer_is_chosen_from_the_truncated_answer` |
+| Nothing is recorded when no word played | `test_an_interviewer_cut_off_before_a_word_played_leaves_no_turn` |
+| No turn is ever recorded twice | `test_no_turn_is_ever_recorded_twice` |
+| A long interview stays consistent | `test_a_long_interview_with_interruptions_stays_consistent` |
 
 The mechanism under test is a generation fence in `app/panel/floor.py`. Every
 handover of the floor increments a counter; any work tagged with an older
@@ -75,8 +89,10 @@ exactly, rather than estimated from elapsed time.
 
 ## Results
 
-**Not yet measured.** The pure-logic acceptance test passes (15 tests). The live
-run against LiveKit and Rime is pending the wiring in `app/agent.py`.
+**Logic proven, audio pending.** The acceptance test passes: 48 tests, of which
+21 cover the interruption claim directly. Four of the five clauses are proven
+here without a network. The fifth — that queued Rime audio actually stops —
+belongs to LiveKit's playback pipeline and is measured in the live run below.
 
 To be filled in before submission, with cached and uncached measurements
 labelled separately:
