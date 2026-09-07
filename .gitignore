@@ -7,3 +7,6 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 *.db
+
+# Local run log from the agent worker.
+agent.log
