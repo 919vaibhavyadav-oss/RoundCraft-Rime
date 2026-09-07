@@ -61,13 +61,28 @@ that belongs to an interrupted turn.
 ## Setup
 
 ```bash
-cp .env.example .env      # fill in your own keys; never commit this file
+uv python pin 3.12
 uv sync --all-extras
-uv run pytest -q
+uv run python scripts/setup.py
 ```
 
-Credentials are read from the environment only. `.env` is gitignored, and
-`.env.example` contains placeholders alone.
+The last command does the rest: it creates `.env`, names every key that is
+still blank and where to get it, then tests each service for real. Run it again
+after filling anything in. It never prints a key value, so its output is safe to
+share.
+
+When everything passes:
+
+```bash
+uv run python -m app.agent dev
+```
+
+Then open [agents-playground.livekit.io](https://agents-playground.livekit.io),
+point it at your LiveKit project, and join the room.
+
+Credentials are read from the environment only. `.env` is gitignored,
+`.env.example` holds placeholders alone, and CI fails the build if anything
+key-shaped reaches the tree.
 
 ## Known limitations and failure behaviour
 
