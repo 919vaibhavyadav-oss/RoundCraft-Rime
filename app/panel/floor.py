@@ -80,6 +80,16 @@ class FloorGuard:
             return
         self._words.extend(words)
 
+    @property
+    def heard_ms(self) -> int:
+        """Offset of the last word reported as played, or 0 if none has been.
+
+        The live agent cuts an interruption here rather than measuring elapsed
+        time, because a word only reaches it once it has actually been played.
+        Whatever arrived is what was heard, by construction.
+        """
+        return max((word.start_ms for word in self._words), default=0)
+
     def accepts(self, generation: int) -> bool:
         """Whether work tagged with this generation is still current.
 
@@ -118,3 +128,26 @@ class FloorGuard:
         if generation == self.generation:
             self.speaker_id = None
             self._words = []
+
+
+def word_from_timing(text: str, start_s: object, end_s: object) -> SpokenWord | None:
+    """Turn one timestamped word from Rime into a `SpokenWord`, or None if untimed.
+
+    Rime's websocket mode reports a real start time per word. LiveKit's fallback
+    synchroniser, used when alignment is unavailable, reports only an end time
+    paced against playback. Either places the cut far better than elapsed-time
+    estimation does, so we take whichever is offered and prefer the start.
+
+    A word with no timing at all is dropped rather than recorded at zero, which
+    would otherwise make every untimed word look like it was heard first. The
+    timestamps are typed as `object` because that is what arrives: each vendor
+    has its own sentinel for absent, and guessing which one is how a missing
+    timestamp quietly becomes a word at 0ms.
+    """
+    stamp = start_s if isinstance(start_s, (int, float)) else end_s
+    if not isinstance(stamp, (int, float)):
+        return None
+    cleaned = text.strip()
+    if not cleaned:
+        return None
+    return SpokenWord(text=cleaned, start_ms=max(0, int(stamp * 1000)))

@@ -19,7 +19,9 @@ from typing import Literal
 
 from app.panel.roster import PANEL, Interviewer
 
-Action = Literal["probe", "challenge", "ask", "clarify"]
+# "open" is never chosen by scoring: it is the one turn that happens before the
+# candidate has said anything for the director to score against.
+Action = Literal["probe", "challenge", "ask", "clarify", "open"]
 
 HEDGE_CUES: tuple[str, ...] = (
     "i guess",

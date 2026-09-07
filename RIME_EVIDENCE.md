@@ -89,10 +89,27 @@ exactly, rather than estimated from elapsed time.
 
 ## Results
 
-**Logic proven, audio pending.** The acceptance test passes: 48 tests, of which
-21 cover the interruption claim directly. Four of the five clauses are proven
-here without a network. The fifth — that queued Rime audio actually stops —
-belongs to LiveKit's playback pipeline and is measured in the live run below.
+**Logic proven and wired, audio pending.** The acceptance test passes: 63 tests,
+of which 33 cover the interruption claim directly. Four of the five clauses are
+proven here without a network. The fifth — that queued Rime audio actually
+stops — belongs to LiveKit's playback pipeline and is measured in the live run
+below.
+
+The live session drives the same `InterviewSession` object the tests drive,
+rather than a parallel implementation, so what is proven above is what runs.
+Four seams connect them, in `app/agent.py`:
+
+| Room event | Panel call |
+| --- | --- |
+| `on_enter` | `panel_opened()` — the hiring manager takes the floor and opens |
+| `on_user_turn_completed` | `candidate_interrupted()` if the floor was still held, then `candidate_said()` |
+| `transcription_node` | `interviewer_spoke()`, one word at a time, as each is played |
+| `speech_created`, once done uninterrupted | `interviewer_finished()` |
+
+The cut point needs no estimation. `transcription_node` sits downstream of audio
+synchronisation, so a word reaches it only once it has been played; when the
+candidate cuts in, that stream stops. Whatever arrived is what was heard, which
+is why `heard_ms() + 1` is the exact cut rather than an approximation of one.
 
 To be filled in before submission, with cached and uncached measurements
 labelled separately:
@@ -106,8 +123,10 @@ labelled separately:
 - The floor guard is pure logic. It guarantees the application never *chooses*
   to play stale audio; the stop latency itself belongs to LiveKit's playback
   pipeline and is measured separately in the live run above.
-- Word timestamps require Rime's websocket streaming mode. With
-  `use_websocket=False` the cut point degrades to elapsed-time estimation, which
-  we have not characterised.
+- Word timestamps require Rime's websocket streaming mode, which the plugin
+  turns on together with aligned transcripts. With `use_websocket=False` there
+  are no start times and the cut point degrades to LiveKit's playback pacing,
+  which we have not characterised; the agent logs a warning at startup in that
+  configuration rather than silently producing weaker evidence.
 - Tested with three interviewers. The mechanism is not sensitive to panel size,
   but we have not run five.

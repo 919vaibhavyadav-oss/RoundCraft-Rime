@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 
 from app.panel import director
 from app.panel.floor import FloorGuard, Interruption, SpokenWord
-from app.panel.roster import Interviewer
+from app.panel.roster import PANEL, Interviewer
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +44,30 @@ class InterviewSession:
     transcript: list[Turn] = field(default_factory=list)
     _open: director.Decision | None = None
     _generation: int = 0
+
+    # -- opening the room ----------------------------------------------------
+
+    def panel_opened(self) -> director.Decision:
+        """Seat the hiring manager to open, before the candidate has said anything.
+
+        The director scores interviewers against what the candidate just said,
+        which is nothing yet. Rather than let an empty string pick the opener by
+        tie-break, the person who runs the room opens it, as they would in a real
+        panel. Every turn after this one is chosen by the director as normal.
+        """
+        opener = PANEL[0]
+        decision = director.Decision(
+            speaker=opener,
+            action="open",
+            objective=(
+                "Welcome the candidate, introduce the panel in one sentence, and "
+                "ask them to walk through a product they shipped."
+            ),
+            rationale="the hiring manager opens the interview",
+        )
+        self._open = decision
+        self._generation = self.floor.take_floor(opener.id)
+        return decision
 
     # -- the candidate's side ------------------------------------------------
 
@@ -79,6 +103,10 @@ class InterviewSession:
     def interviewer_spoke(self, generation: int, words: list[SpokenWord]) -> None:
         """Report what Rime played, so an interruption can be placed exactly."""
         self.floor.note_spoken(generation, words)
+
+    def heard_ms(self) -> int:
+        """How far into the current turn the candidate has actually heard."""
+        return self.floor.heard_ms
 
     def interviewer_finished(self, generation: int, text: str) -> bool:
         """Commit a turn that reached the candidate whole. Returns whether it counted.

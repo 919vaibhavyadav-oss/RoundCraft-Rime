@@ -1,9 +1,9 @@
 """The LiveKit agent: one voice session carrying three interviewers.
 
 This module is deliberately thin. Everything that can be decided without a
-network — who speaks next, which voice they speak in, what counts as heard after
-an interruption — lives in `app.panel` and is unit-tested there. What remains
-here is wiring, which can only be proven by running it.
+network -- who speaks next, which voice they speak in, what counts as heard
+after an interruption -- lives in `app.panel` and is unit-tested there. What
+remains here is wiring, which can only be proven by running it.
 
 The shape of a turn:
 
@@ -16,6 +16,12 @@ The shape of a turn:
 
 and on a barge-in, the floor guard fences everything belonging to the abandoned
 turn so it can never arrive late in the next interviewer's voice.
+
+The live session drives the *same* `InterviewSession` object the acceptance
+tests drive. That is deliberate: a parallel reimplementation here would mean the
+tested behaviour and the shipped behaviour are two different things, which is
+the exact shape of the configuration drift that cost us a week on the other
+build.
 """
 
 import logging
@@ -29,14 +35,28 @@ from dotenv import load_dotenv
 # hand. In deployment the environment already carries them and this is a no-op.
 load_dotenv()
 
+from collections.abc import AsyncGenerator, AsyncIterable  # noqa: E402
+
 from livekit import agents  # noqa: E402
-from livekit.agents import Agent, AgentSession, RoomInputOptions  # noqa: E402
+from livekit.agents import (  # noqa: E402
+    NOT_GIVEN,
+    Agent,
+    AgentSession,
+    ChatContext,
+    ChatMessage,
+    ModelSettings,
+    RoomInputOptions,
+    SpeechCreatedEvent,
+    StopResponse,
+)
+from livekit.agents.voice.io import TimedString  # noqa: E402
 from livekit.plugins import deepgram, openai, rime, silero  # noqa: E402
 
 from app.config import get_settings  # noqa: E402
 from app.panel import director  # noqa: E402
-from app.panel.floor import FloorGuard, SpokenWord  # noqa: E402
+from app.panel.floor import word_from_timing  # noqa: E402
 from app.panel.roster import PANEL  # noqa: E402
+from app.panel.session import InterviewSession  # noqa: E402
 from app.panel.voices import DEFAULT_LANG, DEFAULT_MODEL, voice_for  # noqa: E402
 
 logger = logging.getLogger("roundcraft")
@@ -55,51 +75,129 @@ answer your own question.
 """
 
 
+def turn_instruction(decision: director.Decision) -> str:
+    """What this one interviewer is trying to get at, this turn."""
+    return (
+        f"Speak now as {decision.speaker.name}, the {decision.speaker.role}. "
+        f"Objective ({decision.action}): {decision.objective}"
+    )
+
+
 class PanelAgent(Agent):
-    """Holds the panel state across turns and swaps voice per interviewer."""
+    """Binds the tested panel logic to LiveKit's turn and playback events."""
 
     def __init__(self) -> None:
         super().__init__(instructions=SYSTEM_PROMPT)
-        self.state = director.PanelState()
-        self.floor = FloorGuard()
+        self.interview = InterviewSession()
 
-    def open_turn(self, candidate_text: str) -> tuple[director.Decision, int]:
-        """Choose the next interviewer and take the floor in their name.
+    # -- opening -------------------------------------------------------------
 
-        Returns the decision and the generation that owns this turn. Anything
-        produced for an older generation is stale and must not be spoken.
+    async def on_enter(self) -> None:
+        """Open the interview rather than waiting to be spoken to.
+
+        A panel that joins in silence reads as broken. The hiring manager opens,
+        in their own voice, and the floor is taken in their name so the very
+        first sentence is interruptible on the same terms as every later one.
         """
-        decision = director.choose_next(self.state, candidate_text)
-        generation = self.floor.take_floor(decision.speaker.id)
+        decision = self.interview.panel_opened()
+        self._switch_voice(decision.speaker.id)
         logger.info(
-            "floor -> %s (gen %s): %s", decision.speaker.name, generation, decision.rationale
+            "floor -> %s (gen %s): opening",
+            decision.speaker.name,
+            self.interview.generation,
         )
-        return decision, generation
+        self.session.generate_reply(instructions=turn_instruction(decision))
 
-    def turn_instruction(self, decision: director.Decision) -> str:
-        """What this one interviewer is trying to get at, this turn."""
-        return (
-            f"Speak now as {decision.speaker.name}, the {decision.speaker.role}. "
-            f"Objective ({decision.action}): {decision.objective}"
+    # -- the candidate's turn ------------------------------------------------
+
+    async def on_user_turn_completed(self, turn_ctx: ChatContext, new_message: ChatMessage) -> None:
+        """Pick the next interviewer, in their voice, before the model writes.
+
+        By the time this runs, a barge-in has already happened physically:
+        LiveKit stopped playback when the candidate started speaking. So the
+        first thing to settle is the turn that was cut off, and only then does
+        the director get to choose who answers.
+        """
+        if self.interview.current_speaker is not None:
+            self._close_interrupted_turn()
+
+        answer = (new_message.text_content or "").strip()
+        if not answer:
+            # Deepgram produced nothing usable. Say nothing rather than let the
+            # director score an empty string and pick a speaker by tie-break.
+            raise StopResponse
+
+        decision = self.interview.candidate_said(answer)
+        self._switch_voice(decision.speaker.id)
+        logger.info(
+            "floor -> %s (gen %s): %s",
+            decision.speaker.name,
+            self.interview.generation,
+            decision.rationale,
         )
+        # The system prompt establishes the panel; this establishes which member
+        # of it is speaking right now. It is added per turn rather than kept in
+        # the context, so the model never holds two conflicting identities.
+        turn_ctx.add_message(role="system", content=turn_instruction(decision))
 
-    def commit_turn(self, decision: director.Decision, generation: int) -> None:
-        """Record a turn that actually reached the candidate."""
-        if not self.floor.accepts(generation):
-            # The candidate interrupted. This turn never happened as far as the
-            # transcript and the director are concerned.
-            logger.info("discarded stale turn for %s (gen %s)", decision.speaker.id, generation)
-            return
-        self.state = director.record(self.state, decision)
-        self.floor.release(generation)
+    # -- what the candidate actually heard -----------------------------------
 
-    def note_words(self, generation: int, words: list[SpokenWord]) -> None:
-        """Record what Rime reported as played, for the turn holding the floor."""
-        self.floor.note_spoken(generation, words)
+    async def transcription_node(
+        self, text: AsyncIterable[str | TimedString], model_settings: ModelSettings
+    ) -> AsyncGenerator[str | TimedString, None]:
+        """Record each word at the moment it reaches the candidate.
 
-    def barge_in(self, at_ms: int) -> None:
-        """The candidate cut in. Keep only what they actually heard."""
-        cut = self.floor.interrupt(at_ms)
+        This node sits after audio synchronisation, so a word arrives here only
+        once it has been played. That is what makes the transcript a record of
+        what was heard rather than what was generated: when the candidate cuts
+        in, this stream simply stops, and the words that never arrived are
+        exactly the words that were never spoken.
+        """
+        generation = self.interview.generation
+        async for delta in text:
+            if isinstance(delta, TimedString):
+                word = word_from_timing(str(delta), delta.start_time, delta.end_time)
+                if word is not None:
+                    self.interview.interviewer_spoke(generation, [word])
+            yield delta
+
+    # -- committing a turn ---------------------------------------------------
+
+    def watch_speech(self, event: SpeechCreatedEvent) -> None:
+        """Commit an interviewer's turn once it has finished playing out.
+
+        Bound to the session's `speech_created` event in `entrypoint`. The
+        generation is captured now, while this speech is the current turn, so a
+        handle that completes late is judged against the turn it belonged to
+        rather than against whatever is happening by then.
+        """
+        generation = self.interview.generation
+
+        def committed(done: object) -> None:
+            handle = done
+            if getattr(handle, "interrupted", False):
+                # The barge-in path owns this turn; truncating it here would
+                # race the transcript that `on_user_turn_completed` writes.
+                logger.info("speech interrupted at gen %s", generation)
+                return
+            spoken = " ".join(
+                item.text_content
+                for item in getattr(handle, "chat_items", [])
+                if isinstance(item, ChatMessage) and item.role == "assistant" and item.text_content
+            ).strip()
+            if spoken and self.interview.interviewer_finished(generation, spoken):
+                logger.info("committed gen %s: %s", generation, spoken)
+
+        event.speech_handle.add_done_callback(committed)
+
+    # -- internals -----------------------------------------------------------
+
+    def _close_interrupted_turn(self) -> None:
+        """Truncate the turn in progress to the words that were played."""
+        # Every word this turn played arrived through `transcription_node`, so
+        # cutting just past the last of them keeps exactly what was heard. There
+        # is nothing to estimate here: the stream itself is the evidence.
+        cut = self.interview.candidate_interrupted(at_ms=self.interview.heard_ms() + 1)
         if cut is None:
             return
         logger.info(
@@ -110,8 +208,23 @@ class PanelAgent(Agent):
             cut.unheard,
         )
 
+    def _switch_voice(self, panelist_id: str) -> None:
+        """Point Rime at this interviewer's voice for the turn about to be spoken.
 
-def build_session(settings: object | None = None) -> AgentSession:
+        Rime takes the speaker as a per-request parameter, so a handover costs
+        one option update rather than a second synthesiser. This is the whole
+        reason a panel can share a single voice session.
+        """
+        tts = self.session.tts
+        if not isinstance(tts, rime.TTS):
+            # Only Rime takes the speaker per request. Anything else keeps the
+            # voice it was built with rather than failing the turn.
+            return
+        profile = voice_for(panelist_id)
+        tts.update_options(speaker=profile.speaker, speed_alpha=profile.speed_alpha)
+
+
+def build_session(settings: object | None = None) -> AgentSession[None]:
     """Assemble the voice pipeline.
 
     Rime is the primary spoken output: every word the candidate hears comes from
@@ -121,12 +234,12 @@ def build_session(settings: object | None = None) -> AgentSession:
     config = get_settings()
     del settings
     opening = voice_for(PANEL[0].id)
-    return AgentSession(
+    return AgentSession[None](
         stt=deepgram.STT(model=config.deepgram_model),
         llm=openai.LLM(
             model=config.llm_model,
-            base_url=config.llm_base_url or None,
-            api_key=config.llm_api_key or None,
+            base_url=config.llm_base_url or NOT_GIVEN,
+            api_key=config.llm_api_key or NOT_GIVEN,
         ),
         tts=rime.TTS(
             model=config.rime_model or DEFAULT_MODEL,
@@ -134,6 +247,8 @@ def build_session(settings: object | None = None) -> AgentSession:
             lang=config.rime_lang or DEFAULT_LANG,
             speed_alpha=opening.speed_alpha,
             sample_rate=config.rime_sample_rate,
+            # Word-level alignment is only available on the websocket transport,
+            # and word-level alignment is what places an interruption exactly.
             use_websocket=config.rime_use_websocket,
         ),
         vad=silero.VAD.load(),
@@ -147,8 +262,15 @@ async def entrypoint(ctx: agents.JobContext) -> None:
         # Fail loudly at startup rather than halfway through an interview.
         raise RuntimeError(f"Missing required configuration: {', '.join(missing)}")
 
+    if not config.rime_use_websocket:
+        logger.warning(
+            "RIME_USE_WEBSOCKET is off, so words carry no start times and an "
+            "interruption is placed by playback pacing alone."
+        )
+
     agent = PanelAgent()
     session = build_session()
+    session.on("speech_created", agent.watch_speech)
 
     await session.start(
         room=ctx.room,
