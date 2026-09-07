@@ -1,0 +1,35 @@
+[project]
+name = "roundcraft-rime"
+version = "0.1.0"
+description = "An AI interview panel that shares one voice session, with Rime as the primary spoken output."
+requires-python = ">=3.12"
+dependencies = [
+  "livekit-agents[deepgram,rime,silero,turn-detector]>=1.0,<2",
+  "pydantic-settings>=2.10,<3",
+  "httpx>=0.28,<1",
+  "python-dotenv>=1.0,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.17,<2",
+  "pytest>=8.4,<9",
+  "pytest-asyncio>=1.1,<2",
+  "ruff>=0.12,<1",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
