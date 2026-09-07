@@ -13,7 +13,7 @@ import httpx
 
 from app.panel.voices import verify_speakers
 
-CATALOGUE_URL = "https://users.rime.ai/data/voices/voice-details.json"
+CATALOGUE_URL = "https://users.rime.ai/data/voices/voice_details.json"
 
 
 def main() -> int:

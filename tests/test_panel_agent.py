@@ -53,4 +53,4 @@ def test_the_voice_follows_whoever_the_director_picked() -> None:
 
     profile = voice_for(decision.speaker.id)
 
-    assert profile.speaker == "orion"
+    assert profile.speaker == "arcade"

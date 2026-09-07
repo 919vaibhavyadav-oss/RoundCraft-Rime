@@ -82,7 +82,7 @@ def check_rime(key: str) -> tuple[bool, str]:
     """Ask Rime for the voice catalogue, which also validates the key."""
     try:
         response = httpx.get(
-            "https://users.rime.ai/data/voices/voice-details.json",
+            "https://users.rime.ai/data/voices/voice_details.json",
             headers={"Authorization": f"Bearer {key}"},
             timeout=15,
         )

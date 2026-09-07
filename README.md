@@ -23,7 +23,7 @@ before submission.
 | Setting | Value |
 | --- | --- |
 | Model | `coda` |
-| Speakers | `celeste` (Hiring Manager), `orion` (Product Sense), `astra` (Analytics) |
+| Speakers | `argon` (Hiring Manager), `arcade` (Product Sense), `astra` (Analytics) |
 | Language | `eng` |
 | Endpoint | Rime default, via the official LiveKit plugin |
 | Audio format | PCM |

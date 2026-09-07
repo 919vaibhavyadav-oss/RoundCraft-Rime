@@ -32,15 +32,20 @@ class VoiceProfile:
         return {"speaker": self.speaker, "speed_alpha": self.speed_alpha}
 
 
-# speed_alpha is Rime's pace control: below 1.0 is slower than default.
-# The hiring manager sets a measured pace, the analyst is brisker.
+# Chosen from the live Coda catalogue for maximum separation, because a panel
+# whose members sound alike is the failure this product exists to avoid. The
+# spread is deliberate: an older female, a younger male, a younger female, at
+# three different paces. speed_alpha below 1.0 is slower than Rime's default.
 VOICE_PROFILES: dict[str, VoiceProfile] = {
-    "hiring-manager": VoiceProfile(speaker="celeste", speed_alpha=0.95),
-    "product-sense": VoiceProfile(speaker="orion", speed_alpha=1.0),
+    # Elder, clear and professional. The person running the room.
+    "hiring-manager": VoiceProfile(speaker="argon", speed_alpha=0.95),
+    # Young adult male, warm and low. Approachable enough to probe with.
+    "product-sense": VoiceProfile(speaker="arcade", speed_alpha=1.0),
+    # Young adult female, bright and quick. The one who challenges a number.
     "analytics": VoiceProfile(speaker="astra", speed_alpha=1.05),
 }
 
-FALLBACK = VoiceProfile(speaker="celeste", speed_alpha=1.0)
+FALLBACK = VoiceProfile(speaker="argon", speed_alpha=1.0)
 
 
 def voice_for(panelist_id: str) -> VoiceProfile:
