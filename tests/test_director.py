@@ -1,6 +1,7 @@
 """The director hands the floor deliberately, and never on a rotation."""
 
-from app.panel.director import PanelState, choose_next, record
+from app.panel.director import PanelState, _objective, choose_next, record
+from app.panel.roster import PANEL
 
 
 def test_an_answer_about_metrics_goes_to_the_analyst() -> None:
@@ -41,18 +42,47 @@ def test_selection_is_deterministic_for_the_same_input() -> None:
     assert first.speaker.id == second.speaker.id
 
 
-def test_a_claim_without_evidence_is_probed() -> None:
-    decision = choose_next(PanelState(), "It went really well for the team.")
-
-    assert decision.action == "probe"
-    assert "evidence" in decision.objective.lower()
-
-
-def test_a_claim_with_evidence_is_challenged_on_the_tradeoff() -> None:
+def test_an_interviewer_opens_with_their_own_first_angle() -> None:
+    """Not a generic probe. Each interviewer has a line of questioning."""
     decision = choose_next(PanelState(), "Retention measured 22 percent after launch.")
 
-    assert decision.action == "challenge"
-    assert "tradeoff" in decision.objective.lower()
+    assert decision.action == "ask"
+    assert decision.objective == decision.speaker.angles[0]
+
+
+def test_the_same_interviewer_never_repeats_an_angle() -> None:
+    """The bug this exists to prevent: every turn asking the same question.
+
+    Before this, an ordinary turn resolved to one of two fixed strings, so the
+    panel put a variation of the same question all interview.
+    """
+    state = PanelState()
+    speaker = None
+    seen: list[str] = []
+    for _ in range(4):
+        decision = choose_next(state, "Retention measured 22 percent after launch.")
+        if speaker is None:
+            speaker = decision.speaker
+        if decision.speaker.id == speaker.id:
+            seen.append(decision.objective)
+        state = record(state, decision)
+
+    assert len(seen) == len(set(seen)), f"repeated an objective: {seen}"
+
+
+def test_the_generic_probes_take_over_once_the_arc_is_spent() -> None:
+    """A long interview must still have somewhere to go."""
+    speaker = PANEL[0]
+    state = PanelState(question_counts={speaker.id: len(speaker.angles)})
+
+    unsupported = _objective(speaker, len(speaker.angles), "it went really well", False)
+    supported = _objective(speaker, len(speaker.angles), "retention rose 4 percent", True)
+
+    assert unsupported[0] == "probe"
+    assert "evidence" in unsupported[1].lower()
+    assert supported[0] == "challenge"
+    assert "tradeoff" in supported[1].lower()
+    assert state.question_counts[speaker.id] == len(speaker.angles)
 
 
 def test_an_audio_check_is_answered_rather_than_interviewed() -> None:

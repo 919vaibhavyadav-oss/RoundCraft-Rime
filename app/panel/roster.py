@@ -20,6 +20,11 @@ class Interviewer:
     role: str
     expertise: tuple[str, ...]
     brief: str
+    # The line of questioning this interviewer works through, in order. A real
+    # interviewer does not ask one question repeatedly; they open somewhere and
+    # push. Without this the director had two objectives for the whole panel and
+    # every turn asked a variation of the same thing.
+    angles: tuple[str, ...] = ()
     competency: str = ""
     interruptable: bool = True
     _: dict[str, str] = field(default_factory=dict, repr=False, compare=False)
@@ -35,6 +40,12 @@ PANEL: tuple[Interviewer, ...] = (
             "Test judgement, ownership and how the candidate works with other people. "
             "Ask one focused follow-up at a time."
         ),
+        angles=(
+            "Ask them to walk through what they personally owned, not what the team did.",
+            "Ask who else had to agree, and what happened when someone did not.",
+            "Ask about a decision they made without enough information to be sure.",
+            "Ask what they would do differently, and what it cost them to find that out.",
+        ),
         competency="leadership",
     ),
     Interviewer(
@@ -46,6 +57,12 @@ PANEL: tuple[Interviewer, ...] = (
             "Test customer insight and prioritisation. Push on why this problem and "
             "not another one."
         ),
+        angles=(
+            "Ask why this problem and not the next one on the list.",
+            "Ask who the user was, specifically, and how they know that.",
+            "Ask what they chose not to build, and what that cost.",
+            "Ask how they would have known within a month that it was the wrong bet.",
+        ),
         competency="product_judgment",
     ),
     Interviewer(
@@ -56,6 +73,12 @@ PANEL: tuple[Interviewer, ...] = (
         brief=(
             "Test quantitative reasoning. Ask how a claim was measured and what the "
             "guardrail was."
+        ),
+        angles=(
+            "Ask how the metric was defined before the change, not after.",
+            "Ask which guardrail metric they watched, and whether it moved.",
+            "Ask what else could explain the result besides their change.",
+            "Ask over what window and what sample, and whether that was enough.",
         ),
         competency="analytics",
     ),

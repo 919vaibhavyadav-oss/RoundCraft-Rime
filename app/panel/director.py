@@ -58,8 +58,18 @@ class Decision:
     rationale: str
 
 
-def _objective(text: str, has_evidence: bool) -> tuple[Action, str]:
-    """Pick what this turn is for, from what the candidate actually said."""
+def _objective(
+    speaker: Interviewer, asked: int, text: str, has_evidence: bool
+) -> tuple[Action, str]:
+    """Pick what this turn is for, from what the candidate said and what has
+    already been asked.
+
+    `asked` is how many questions this interviewer has put so far, which is also
+    the index of the next unused angle in their line of questioning. Without it
+    every ordinary turn resolved to one of two fixed strings and the panel asked
+    the same question all interview: not the model being dull, but the
+    instruction being identical each time.
+    """
     if any(cue in text for cue in ("am i audible", "can you hear me", "are you there")):
         return "clarify", "I can hear you. Are you ready to continue?"
     if any(cue in text for cue in ("i am ready", "i'm ready", "ready to begin", "let's begin")):
@@ -75,6 +85,12 @@ def _objective(text: str, has_evidence: bool) -> tuple[Action, str]:
             "Let's try a different one. How do you approach a task when the requirements "
             "are unclear?"
         )
+    if asked < len(speaker.angles):
+        # Work down their line of questioning. The first is an opener, the rest
+        # push on what the previous answer left unsaid.
+        return ("ask" if asked == 0 else "probe"), speaker.angles[asked]
+
+    # Their arc is exhausted, so fall back to the two that always apply.
     if not has_evidence:
         return "probe", "What evidence would let us verify that claim?"
     return "challenge", "What tradeoff did you accept, and how did you measure the result?"
@@ -106,7 +122,7 @@ def choose_next(
 
     has_evidence = any(cue in text for cue in EVIDENCE_CUES)
     hedges = [cue for cue in HEDGE_CUES if cue in text]
-    action, objective = _objective(text, has_evidence)
+    action, objective = _objective(speaker, counts[speaker.id], text, has_evidence)
 
     return Decision(
         speaker=speaker,
