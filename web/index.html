@@ -43,12 +43,11 @@
     font: 400 15.5px/1.62 var(--body); -webkit-font-smoothing: antialiased;
   }
   [hidden] { display: none !important; }
-  /* Wide enough to use a laptop screen, with the reading measure held by the
-     paragraphs themselves rather than by the container. At 880 this left 328
-     pixels empty on each side of a 1536 display and read as a narrow column
-     floating in the middle. */
-  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 40px 72px; }
-  @media (max-width: 720px) { .wrap { padding: 0 20px 56px; } }
+  /* Edge to edge. Any fixed width leaves the same proportion of a large
+     display empty: at 1180 a 1920 screen was 39% margin. The pitch takes the
+     room it needs and the form panel takes the rest, so the space is a surface
+     rather than a gutter. The reading measure is held by the paragraphs. */
+  .gutter { padding-inline: clamp(22px, 3.6vw, 60px); }
 
   .eyebrow { font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
   h1 { font: 400 clamp(32px,4vw,50px)/1.08 var(--display); letter-spacing: -.02em; margin: 14px 0 0; text-wrap: balance; }
@@ -79,7 +78,8 @@
   }
   .privacy { font-size: 12px; color: var(--ink-3); margin-top: 6px; }
 
-  .top { display: flex; align-items: center; gap: 12px; padding: 22px 0 16px; border-bottom: 1px solid var(--rule); }
+  .top { display: flex; align-items: center; gap: 12px; padding-block: 20px 15px;
+         border-bottom: 1px solid var(--rule); }
   .brand { font: 500 18px var(--display); letter-spacing: -.01em; }
   .brand b { font-weight: 600; }
   .brand span { display: block; font: 400 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-top: 4px; }
@@ -90,22 +90,31 @@
   /* ── landing ─────────────────────────────────────────────── */
   /* Side by side, so the form is above the fold on a 768px laptop. Stacked in
      one column it sat 94px below it, and nobody scrolls to find Start. */
-  .hero {
-    padding: 44px 0 8px; display: grid; gap: 64px;
-    grid-template-columns: minmax(0, 1fr) 420px; align-items: start;
+  #landing {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 31%);
+    min-height: calc(100vh - 76px);
   }
-  @media (max-width: 940px) { .hero { grid-template-columns: 1fr; gap: 26px; } }
+  @media (max-width: 940px) { #landing { grid-template-columns: 1fr; min-height: 0; } }
+  .pitch { padding-block: 40px; display: flex; flex-direction: column; justify-content: center; }
+  .formcol {
+    background: var(--sheet); border-left: 1px solid var(--rule);
+    padding-block: 40px; display: flex; align-items: center;
+  }
+  @media (max-width: 940px) { .formcol { border-left: 0; border-top: 1px solid var(--rule); } }
+  .summary-head { padding: 44px 0 0; }
+  /* The record afterwards is read, not operated, so it keeps a measure. */
+  #summary { max-width: 1080px; margin: 0 auto; padding-bottom: 72px; }
   .pull { margin: 26px 0 0; padding-left: 18px; border-left: 2px solid var(--cut); }
   .pull p { margin: 0; font: 400 16.5px/1.58 var(--display); color: var(--ink-2); max-width: 54ch; }
   .pull b { color: var(--ink); font-weight: 600; }
-  .gate { margin: 0; padding: 20px; background: var(--sheet); border: 1px solid var(--rule);
-          border-radius: 11px; box-shadow: var(--lift); }
+  /* The panel behind it is the card now, so the form itself carries no chrome. */
+  .gate { margin: 0 auto; padding: 0; width: 100%; max-width: 400px; }
   .gate .row { display: flex; gap: 12px; }
   .gate .row > div { flex: 1; }
   .gate .go { margin-top: 15px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .gate .hint { font-size: 12.5px; color: var(--ink-3); }
   .gate .err { color: var(--cut); font-size: 13px; margin-top: 10px; min-height: 16px; }
-  .seats { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; margin: 30px 0 0;
+  .seats { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; margin: 34px 0 0;
            background: var(--rule); border: 1px solid var(--rule); border-radius: 11px; overflow: hidden; }
   @media (max-width: 660px) { .seats { grid-template-columns: 1fr; } }
   .seat { background: var(--sheet); padding: 16px 18px; }
@@ -214,15 +223,14 @@
 <body>
 
 <!-- ───────────────────────────────────────────── landing -->
-<div class="wrap" id="page">
-  <div class="top">
+<div id="page">
+  <div class="top gutter">
     <div class="brand"><b>RoundCraft</b><span>every voice is Rime</span></div>
     <div class="status"><span class="dot" id="dot"></span><span class="eyebrow" id="state">not started</span></div>
   </div>
 
   <section id="landing">
-    <div class="hero">
-      <div class="pitch">
+    <div class="pitch gutter">
       <div class="eyebrow">Panel interview practice</div>
       <h1>You can rehearse questions.<br>You can't rehearse <em>being interrupted</em>.</h1>
       <p class="lede">
@@ -236,8 +244,10 @@
         still running have to be fenced off — or you hear one interviewer's words in
         another's voice, and get assessed on a sentence you never heard.</p>
       </div>
-      </div>
+      <div class="seats" id="seats"></div>
+    </div>
 
+    <aside class="formcol gutter">
       <form class="gate" id="gate" autocomplete="off">
         <div class="row">
           <div><label for="name">Your name</label>
@@ -259,13 +269,11 @@
         </div>
         <div class="err" id="err" role="status" aria-live="polite"></div>
       </form>
-    </div>
-
-    <div class="seats" id="seats"></div>
+    </aside>
   </section>
 
-  <section id="summary" hidden>
-    <div class="hero" style="padding-bottom:0">
+  <section id="summary" class="gutter" hidden>
+    <div class="summary-head">
       <div class="eyebrow">Session record</div>
       <h1 style="font-size:clamp(27px,4vw,38px)">What the panel actually heard</h1>
       <p class="lede">Only words that reached you are recorded. Anything an interviewer began
