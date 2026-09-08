@@ -15,3 +15,6 @@ web_server.log
 # The demo recording lives beside the repo but is not part of it.
 Video Project*.mp4
 *.mp4
+
+# The submission archive is built from the tree; it does not live in it.
+*.zip
