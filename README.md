@@ -59,6 +59,10 @@ uv run python scripts/serve_web.py
 
 Then open <http://localhost:8080> and click Join.
 
+[DEMO_SCRIPT.md](DEMO_SCRIPT.md) is the four-minute run that exercises every
+clause of the claim, including which sentence to say so the benchmark lookup
+has something to find, and when to cut across it.
+
 The LiveKit API secret stays in the server process. The browser receives only a
 short-lived token scoped to one room, which is what keeps credentials out of
 client code.
