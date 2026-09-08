@@ -220,9 +220,13 @@ class PanelAgent(Agent):
     async def check_benchmark(self, context: RunContext[None], claim: str) -> str:
         """Look up the industry benchmark for a metric the candidate just cited.
 
-        Use this whenever the candidate gives a number for one of: retention,
-        activation, conversion, engagement, churn. Pass their claim in their
-        own words. A test keeps this list in step with the benchmark data.
+        Call this ONLY when the candidate has stated a number for one of these
+        metrics: retention, activation, conversion, engagement, churn. Do not
+        call it for a product or feature description.
+
+        Pass the metric claim itself, in their words, naming the metric: for
+        example "retention went up four percent", not "our recommendation
+        engine". A test keeps this list in step with the benchmark data.
         """
         # Captured before the wait, so a result arriving after a handover is
         # judged against the turn that asked for it rather than whichever turn
