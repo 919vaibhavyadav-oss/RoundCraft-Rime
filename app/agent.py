@@ -112,9 +112,11 @@ class PanelAgent(Agent):
     def __init__(self) -> None:
         super().__init__(instructions=SYSTEM_PROMPT)
         self.interview = InterviewSession()
-        # The full text of the reply being generated, kept so an interruption
-        # can report the half that never played.
+        # The full text of the reply being generated, and the turn it belongs
+        # to. Both, because a turn cut before its generation began would
+        # otherwise inherit the previous interviewer's sentence.
         self._intended = ""
+        self._intended_generation = -1
         # What the candidate told us about themselves, for this session only.
         # Never written anywhere, never logged: only its length is ever
         # reported, which is enough to know it arrived.
@@ -252,6 +254,7 @@ class PanelAgent(Agent):
         by the time it is needed.
         """
         self._intended = ""
+        self._intended_generation = self.interview.generation
 
         async def kept() -> AsyncGenerator[llm.ChatChunk | str | FlushSentinel, None]:
             stream = Agent.default.llm_node(self, chat_ctx, tools, model_settings)
@@ -408,8 +411,15 @@ class PanelAgent(Agent):
                 # stream only ever reports a word once it has been heard.
                 if self.interview.floor.accepts(generation):
                     # self._intended is the untruncated reply; `spoken` has
-                    # already been shortened to what was played.
-                    self._close_interrupted_turn(intended=self._intended or spoken)
+                    # already been shortened to what was played. Only use it if
+                    # it belongs to this turn: a live session cut Priya off
+                    # before her generation started and reported Noah's sentence
+                    # as the words she never got to say, which is precisely the
+                    # attribution this product exists to prevent.
+                    mine = self._intended_generation == generation
+                    self._close_interrupted_turn(
+                        intended=(self._intended if mine else "") or spoken
+                    )
                 else:
                     logger.debug("speech handle discarded at gen %s", generation)
                 return

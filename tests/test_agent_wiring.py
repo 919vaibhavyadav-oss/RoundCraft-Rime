@@ -157,3 +157,51 @@ class TestOpeningLine:
 
     def test_an_empty_list_joins_to_nothing(self) -> None:
         assert _join_names([]) == ""
+
+
+class TestIntendedTextBelongsToItsOwnTurn:
+    """A cut turn must never be credited with another interviewer's sentence.
+
+    Live at 14:25:55 the analytics interviewer was cut off before her reply had
+    begun generating, and the words reported as dropped were the product-sense
+    interviewer's from the turn before:
+
+        interrupted analytics at 1ms; heard '',
+            dropped "I'm Noah, actually - but happy to continue"
+
+    The transcript would have shown one interviewer's sentence struck through
+    under another's name, which is the attribution failure this whole build
+    exists to prevent, arriving through the very feature that reports it.
+    """
+
+    def test_a_turn_cut_before_it_generated_reports_nothing_dropped(self) -> None:
+        """Nothing is better than the previous speaker's words."""
+        session = InterviewSession()
+        session.candidate_said("We shipped Compass for premium members.")
+        first = session.generation
+        session.interviewer_spoke(first, [SpokenWord("I'm", 0), SpokenWord("Noah", 120)])
+        session.candidate_interrupted(
+            at_ms=session.heard_ms() + 1, intended="I'm Noah, actually - but happy to continue"
+        )
+
+        # A different interviewer takes over and is cut before speaking a word.
+        session.candidate_said("Sorry, I meant the analytics side.")
+        second = session.generation
+        cut = session.candidate_interrupted(at_ms=1, intended="")
+
+        assert cut is not None
+        assert cut.generation == second
+        assert cut.unheard == "", "inherited a sentence from the previous turn"
+
+    def test_the_right_turn_still_reports_its_own_words(self) -> None:
+        session = InterviewSession()
+        session.candidate_said("We shipped Compass for premium members.")
+        session.interviewer_spoke(session.generation, [SpokenWord("Thanks,", 0)])
+
+        cut = session.candidate_interrupted(
+            at_ms=session.heard_ms() + 1, intended="Thanks, and before we go deeper, who felt it?"
+        )
+
+        assert cut is not None
+        assert cut.heard == "Thanks,"
+        assert cut.unheard == "and before we go deeper, who felt it?"
