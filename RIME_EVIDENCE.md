@@ -103,8 +103,8 @@ exactly, rather than estimated from elapsed time.
 
 ## Results
 
-**Logic proven and wired, audio pending.** The acceptance test passes: 87 tests,
-of which 53 cover the interruption claim directly. Four of the five clauses are
+**Logic proven and wired, audio pending.** The acceptance test passes: 127 tests,
+of which 67 cover the interruption claim directly. Four of the five clauses are
 proven here without a network. The fifth — that queued Rime audio actually
 stops — belongs to LiveKit's playback pipeline and is measured in the live run
 below.
