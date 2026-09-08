@@ -43,12 +43,17 @@
     font: 400 15.5px/1.62 var(--body); -webkit-font-smoothing: antialiased;
   }
   [hidden] { display: none !important; }
-  .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+  /* Wide enough to use a laptop screen, with the reading measure held by the
+     paragraphs themselves rather than by the container. At 880 this left 328
+     pixels empty on each side of a 1536 display and read as a narrow column
+     floating in the middle. */
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 40px 72px; }
+  @media (max-width: 720px) { .wrap { padding: 0 20px 56px; } }
 
   .eyebrow { font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
-  h1 { font: 400 clamp(30px,4.4vw,44px)/1.1 var(--display); letter-spacing: -.02em; margin: 14px 0 0; text-wrap: balance; }
+  h1 { font: 400 clamp(32px,4vw,50px)/1.08 var(--display); letter-spacing: -.02em; margin: 14px 0 0; text-wrap: balance; }
   h1 em { font-style: italic; color: var(--cut); }
-  .lede { font-size: 16.5px; line-height: 1.6; color: var(--ink-2); max-width: 52ch; margin: 16px 0 0; text-wrap: pretty; }
+  .lede { font-size: 17px; line-height: 1.62; color: var(--ink-2); max-width: 54ch; margin: 18px 0 0; text-wrap: pretty; }
 
   button {
     font: 500 15px var(--body); padding: 11px 24px; border-radius: 7px;
@@ -86,12 +91,12 @@
   /* Side by side, so the form is above the fold on a 768px laptop. Stacked in
      one column it sat 94px below it, and nobody scrolls to find Start. */
   .hero {
-    padding: 40px 0 8px; display: grid; gap: 42px;
-    grid-template-columns: minmax(0, 1fr) 392px; align-items: start;
+    padding: 44px 0 8px; display: grid; gap: 64px;
+    grid-template-columns: minmax(0, 1fr) 420px; align-items: start;
   }
   @media (max-width: 940px) { .hero { grid-template-columns: 1fr; gap: 26px; } }
   .pull { margin: 26px 0 0; padding-left: 18px; border-left: 2px solid var(--cut); }
-  .pull p { margin: 0; font: 400 16px/1.55 var(--display); color: var(--ink-2); max-width: 52ch; }
+  .pull p { margin: 0; font: 400 16.5px/1.58 var(--display); color: var(--ink-2); max-width: 54ch; }
   .pull b { color: var(--ink); font-weight: 600; }
   .gate { margin: 0; padding: 20px; background: var(--sheet); border: 1px solid var(--rule);
           border-radius: 11px; box-shadow: var(--lift); }
@@ -118,10 +123,10 @@
                   letter-spacing: .1em; text-transform: uppercase; color: var(--on-stage-2); }
   .callbar .rec i { width: 7px; height: 7px; border-radius: 50%; background: var(--cut); display: block; }
 
-  .stagewrap { display: grid; grid-template-columns: 1fr 340px; min-height: 0; }
+  .stagewrap { display: grid; grid-template-columns: 1fr 400px; min-height: 0; }
   @media (max-width: 900px) { .stagewrap { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } }
 
-  .tiles { padding: 20px; display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; align-content: start; }
+  .tiles { padding: 24px; display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; align-content: start; }
   @media (max-width: 560px) { .tiles { grid-template-columns: 1fr; } }
   .tile {
     background: var(--tile); border: 1px solid #2c3038; border-radius: 12px; padding: 18px;
