@@ -17,6 +17,10 @@ dev = [
   "mypy>=1.17,<2",
   "pytest>=8.4,<9",
   "pytest-asyncio>=1.1,<2",
+  # Used by the tests that read render.yaml, so a drifting deployment
+  # setting fails a build rather than a demo.
+  "pyyaml>=6.0,<7",
+  "types-PyYAML>=6.0,<7",
   "ruff>=0.12,<1",
 ]
 

@@ -29,8 +29,14 @@ jobs:
       - run: uv python install 3.12
       - run: uv sync --all-extras
       - run: uv run ruff check .
-      - run: uv run mypy app
+      # The scripts are part of the shipped path: one serves the interface and
+      # mints tokens, the other is what a judge runs first.
+      - run: uv run mypy app tests scripts/serve_web.py
       - name: Acceptance test for the hard voice problem
         # Named separately so a judge reproducing the claim can see it pass.
-        run: uv run pytest tests/test_floor.py -q
+        run: uv run pytest tests/test_floor.py tests/test_interruption_journey.py -q
+      - name: Deployment matches the demo
+        # Every setting that differed between code, .env and render.yaml cost a
+        # live session today. This is that class of bug, caught in a build.
+        run: uv run pytest tests/test_deployment_config.py -q
       - run: uv run pytest -q
