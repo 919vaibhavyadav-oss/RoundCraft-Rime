@@ -4,307 +4,428 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RoundCraft</title>
+<meta name="description" content="Practise the interview you can't rehearse: a panel that interrupts, hands off, and follows up on your numbers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/livekit-client@2.7.2/dist/livekit-client.umd.min.js"></script>
 <style>
   :root {
-    --ink: #14161a;
-    --ink-soft: #5b6270;
-    --ground: #f6f5f2;
+    --ink: #191a17;
+    --ink-2: #55574f;
+    --ink-3: #8b8d84;
+    --ground: #faf9f5;
     --card: #ffffff;
-    --line: #e3e1dc;
-    --live: #1c6b4a;
-    --dropped: #b23b3b;
-    --accent: #2d4a7c;
-    --shadow: 0 1px 2px rgba(20, 22, 26, .06), 0 8px 24px rgba(20, 22, 26, .05);
+    --line: #e2e0d7;
+    --line-2: #cfccc0;
+    --live: #2f6b47;
+    --live-soft: #e8f2eb;
+    --cut: #a8402f;
+    --cut-soft: #fbeceA;
+    --accent: #2c4a6e;
+    --display: "Fraunces", Georgia, serif;
+    --body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --shadow: 0 1px 2px rgba(25,26,23,.05), 0 10px 30px rgba(25,26,23,.05);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --ink: #ecebe8; --ink-soft: #9aa1ad; --ground: #16181c; --card: #1e2126;
-      --line: #2c3037; --live: #5fd3a0; --dropped: #f08a8a; --accent: #8fb0e8;
-      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+      --ink: #ecebe5; --ink-2: #a8aaa0; --ink-3: #7d7f76;
+      --ground: #14151a; --card: #1c1e24; --line: #2b2e36; --line-2: #3a3e48;
+      --live: #6fcf97; --live-soft: #1a2b22; --cut: #e88b7a; --cut-soft: #2c1d1a;
+      --accent: #8fb2dd;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.25);
     }
   }
+  :root[data-theme="dark"] {
+    --ink: #ecebe5; --ink-2: #a8aaa0; --ink-3: #7d7f76;
+    --ground: #14151a; --card: #1c1e24; --line: #2b2e36; --line-2: #3a3e48;
+    --live: #6fcf97; --live-soft: #1a2b22; --cut: #e88b7a; --cut-soft: #2c1d1a;
+    --accent: #8fb2dd;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.25);
+  }
+
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--ground); color: var(--ink);
-    font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font: 15.5px/1.6 var(--body);
+    -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 940px; margin: 0 auto; padding: 28px 20px 64px; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 22px 72px; }
+  [hidden] { display: none !important; }
 
-  header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
-  h1 { font-size: 21px; letter-spacing: -.01em; margin: 0; font-weight: 650; }
-  .sub { color: var(--ink-soft); font-size: 13.5px; }
-  .status {
-    margin-left: auto; font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
-    color: var(--ink-soft); display: flex; align-items: center; gap: 7px;
+  /* --- shared ------------------------------------------------------- */
+  .eyebrow {
+    font: 500 11.5px/1 var(--mono); letter-spacing: .11em; text-transform: uppercase;
+    color: var(--ink-3);
   }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
-  .dot.on { background: var(--live); }
+  h1 { font: 600 clamp(30px, 5vw, 44px)/1.1 var(--display); margin: 14px 0 0; letter-spacing: -.015em; text-wrap: balance; }
+  h2 { font: 600 21px/1.25 var(--display); margin: 0 0 4px; letter-spacing: -.01em; }
+  .lede { font-size: 17px; color: var(--ink-2); max-width: 60ch; margin: 14px 0 0; text-wrap: pretty; }
+  button {
+    font: 600 15px var(--body); padding: 11px 22px; border-radius: 8px;
+    border: 1px solid var(--accent); background: var(--accent); color: var(--ground);
+    cursor: pointer; transition: opacity .15s;
+  }
+  button:hover:not(:disabled) { opacity: .88; }
+  button:disabled { opacity: .4; cursor: default; }
+  button.ghost { background: transparent; color: var(--accent); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
-  .panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 22px 0; }
-  @media (max-width: 640px) { .panel { grid-template-columns: 1fr; } }
+  /* --- topbar ------------------------------------------------------- */
+  .top {
+    display: flex; align-items: center; gap: 12px;
+    padding: 20px 0 0; border-bottom: 1px solid var(--line); padding-bottom: 16px;
+  }
+  .brand { font: 600 17px var(--display); letter-spacing: -.01em; }
+  .brand span { color: var(--ink-3); font: 400 13px var(--body); margin-left: 9px; }
+  .status { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .status .eyebrow { color: var(--ink-3); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line-2); }
+  .dot.on { background: var(--live); box-shadow: 0 0 0 3px var(--live-soft); }
+
+  /* --- landing ------------------------------------------------------ */
+  .hero { padding: 54px 0 40px; }
+  .claim {
+    margin: 30px 0 0; padding: 18px 20px; border-left: 3px solid var(--cut);
+    background: var(--card); border-radius: 0 9px 9px 0; box-shadow: var(--shadow);
+  }
+  .claim p { margin: 0; color: var(--ink-2); }
+  .claim strong { color: var(--ink); font-weight: 600; }
+  .start { margin-top: 30px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .start .note { font-size: 13.5px; color: var(--ink-3); }
+
+  /* --- panel -------------------------------------------------------- */
+  .panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 26px 0 0; }
+  @media (max-width: 660px) { .panel { grid-template-columns: 1fr; } }
   .who {
     background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-    padding: 13px 15px; box-shadow: var(--shadow); transition: border-color .15s, transform .15s;
+    padding: 14px 16px; box-shadow: var(--shadow);
+    transition: border-color .18s, box-shadow .18s;
   }
-  .who.speaking { border-color: var(--live); transform: translateY(-2px); }
-  .who .name { font-weight: 620; }
-  .who .role { color: var(--ink-soft); font-size: 12.5px; }
-  .who .voice {
-    font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
-    color: var(--ink-soft); margin-top: 6px;
-  }
+  .who.speaking { border-color: var(--live); box-shadow: 0 0 0 3px var(--live-soft), var(--shadow); }
+  .who .name { font-weight: 600; }
+  .who .role { color: var(--ink-2); font-size: 13px; }
+  .who .voice { font: 500 11.5px var(--mono); color: var(--ink-3); margin-top: 8px; }
   .who.speaking .voice { color: var(--live); }
 
-  .rationale {
-    min-height: 22px; font-size: 13px; color: var(--ink-soft);
-    font-style: italic; margin-bottom: 14px;
+  /* --- room --------------------------------------------------------- */
+  .why {
+    min-height: 24px; font-size: 13.5px; color: var(--ink-2); font-style: italic;
+    margin: 14px 0 0;
   }
-
   .lookup {
-    display: none; align-items: center; gap: 9px; padding: 9px 13px; margin-bottom: 14px;
-    border: 1px dashed var(--line); border-radius: 8px; font-size: 13.5px; color: var(--ink-soft);
-    background: var(--card);
+    display: none; align-items: center; gap: 10px; margin-top: 14px;
+    padding: 10px 14px; border: 1px dashed var(--line-2); border-radius: 8px;
+    background: var(--card); font-size: 13.5px; color: var(--ink-2);
   }
   .lookup.show { display: flex; }
-  .lookup.killed { border-color: var(--dropped); color: var(--dropped); border-style: solid; }
+  .lookup.killed { border-style: solid; border-color: var(--cut); background: var(--cut-soft); color: var(--cut); }
   .spin {
-    width: 11px; height: 11px; border: 2px solid var(--line); border-top-color: var(--accent);
-    border-radius: 50%; animation: spin .8s linear infinite;
+    width: 11px; height: 11px; border: 2px solid var(--line-2); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .8s linear infinite; flex: none;
   }
   .lookup.killed .spin { display: none; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
 
-  .feed { display: flex; flex-direction: column; gap: 10px; }
+  .feed { display: flex; flex-direction: column; gap: 11px; margin-top: 22px; }
   .turn {
     background: var(--card); border: 1px solid var(--line); border-left-width: 3px;
-    border-radius: 8px; padding: 11px 14px; box-shadow: var(--shadow);
+    border-radius: 9px; padding: 12px 15px; box-shadow: var(--shadow);
   }
-  .turn.candidate { border-left-color: var(--accent); }
-  .turn.panelist { border-left-color: var(--live); }
-  .turn.cut { border-left-color: var(--dropped); }
-  .turn .by {
-    font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase;
-    color: var(--ink-soft); margin-bottom: 4px;
-  }
-  .turn .said { white-space: pre-wrap; }
-  .gone { color: var(--dropped); text-decoration: line-through; opacity: .78; }
-  .cutmark {
-    margin-top: 7px; font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
-    color: var(--dropped);
-  }
-  .heardms { font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink-soft); }
+  .turn.you { border-left-color: var(--accent); }
+  .turn.said { border-left-color: var(--live); }
+  .turn.cut { border-left-color: var(--cut); background: var(--cut-soft); }
+  .turn .by { font: 500 11.5px var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
+  .turn .text { white-space: pre-wrap; }
+  .gone { color: var(--cut); text-decoration: line-through; text-decoration-thickness: 1.5px; opacity: .8; }
+  .meta { margin-top: 8px; font: 400 11.5px var(--mono); color: var(--ink-3); }
+  .meta.cutline { color: var(--cut); }
+  .empty { color: var(--ink-3); font-size: 14px; padding: 22px 0; }
 
-  button {
-    font: inherit; font-weight: 560; padding: 9px 20px; border-radius: 8px;
-    border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer;
+  /* --- summary ------------------------------------------------------ */
+  .tally { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 22px 0; }
+  @media (max-width: 660px) { .tally { grid-template-columns: 1fr; } }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow); }
+  .stat .n { font: 600 25px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .stat .l { font-size: 13px; color: var(--ink-2); margin-top: 5px; }
+  .note {
+    margin: 20px 0 0; padding: 15px 18px; border: 1px solid var(--line);
+    border-radius: 9px; background: var(--card); color: var(--ink-2); font-size: 14.5px;
   }
-  button:disabled { opacity: .45; cursor: default; }
-  button.ghost { background: transparent; color: var(--accent); }
-  .bar { display: flex; gap: 10px; align-items: center; margin: 18px 0 22px; flex-wrap: wrap; }
-  .hint { color: var(--ink-soft); font-size: 13px; }
-  .empty { color: var(--ink-soft); font-size: 13.5px; padding: 18px 0; }
+  .note strong { color: var(--ink); }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>RoundCraft</h1>
-    <span class="sub">Panel interview practice &middot; every voice is Rime</span>
-    <span class="status"><span class="dot" id="dot"></span><span id="state">offline</span></span>
-  </header>
 
-  <div class="bar">
-    <button id="join">Join the panel</button>
-    <button id="leave" class="ghost" disabled>Leave</button>
-    <span class="hint" id="hint">Your microphone stays open while the panel speaks, so you can cut in.</span>
+  <div class="top">
+    <div class="brand">RoundCraft <span>every voice is Rime</span></div>
+    <div class="status"><span class="dot" id="dot"></span><span class="eyebrow" id="state">not started</span></div>
   </div>
 
-  <div class="panel" id="panel"></div>
-  <div class="rationale" id="rationale"></div>
+  <!-- ------------------------------------------------ landing -->
+  <section id="landing">
+    <div class="hero">
+      <div class="eyebrow">Panel interview practice</div>
+      <h1>You can rehearse questions.<br>You can't rehearse a panel.</h1>
+      <p class="lede">
+        Three interviewers share one room. They hand off to each other, follow up on the
+        number you just said, and keep talking when you talk over them. Each one speaks
+        in their own Rime voice, switched per turn on a single connection.
+      </p>
 
-  <div class="lookup" id="lookup">
-    <span class="spin"></span><span id="lookuptext"></span>
-  </div>
+      <div class="claim">
+        <p><strong>The hard part isn't stopping the audio.</strong> When you cut across one
+        interviewer, a different one takes over — so the half-finished sentence, and any
+        lookup still running, must be fenced off. Otherwise you hear one interviewer's
+        words in another's voice, and get scored on a sentence you never heard.</p>
+      </div>
 
-  <div class="feed" id="feed">
-    <div class="empty" id="empty">Nothing yet. Join, and the hiring manager opens.</div>
-  </div>
+      <div class="start">
+        <button id="begin">Start the interview</button>
+        <span class="note">Uses your microphone. Interrupt whenever you like — that's the point.</span>
+      </div>
+
+      <div class="panel" id="panel-landing"></div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------ room -->
+  <section id="room" hidden>
+    <div class="panel" id="panel-room"></div>
+    <div class="why" id="why"></div>
+    <div class="lookup" id="lookup"><span class="spin"></span><span id="lookuptext"></span></div>
+    <div class="feed" id="feed"><div class="empty" id="empty">Waiting for the panel…</div></div>
+    <div class="start"><button id="finish" class="ghost">End the interview</button></div>
+  </section>
+
+  <!-- ------------------------------------------------ summary -->
+  <section id="summary" hidden>
+    <div class="hero" style="padding-bottom:0">
+      <div class="eyebrow">Session record</div>
+      <h1 style="font-size:clamp(26px,4vw,34px)">What the panel actually heard</h1>
+      <p class="lede">
+        Only the words that reached you are recorded here. Anything an interviewer began
+        and you cut off is shown struck through, and is not part of the transcript.
+      </p>
+    </div>
+    <div class="tally" id="tally"></div>
+    <div class="note" id="verdict"></div>
+    <div class="feed" id="record"></div>
+    <div class="start"><button id="again">Start another</button></div>
+  </section>
+
 </div>
 
 <script>
 const LK = window.LivekitClient;
 const $ = (id) => document.getElementById(id);
-const feed = $("feed");
 let room = null;
+const SEATS = {};          // panelist id -> the two cards for them
+const NAMES = {};
+let history = [];          // every turn, for the summary
+let interruptions = 0;
 
-const SEATS = {};
+function show(stage) {
+  ["landing", "room", "summary"].forEach((s) => { $(s).hidden = s !== stage; });
+  window.scrollTo({ top: 0 });
+}
 
 function setState(text, live) {
   $("state").textContent = text;
   $("dot").classList.toggle("on", !!live);
 }
 
+function card(m) {
+  const el = document.createElement("div");
+  el.className = "who";
+  el.innerHTML = '<div class="name"></div><div class="role"></div><div class="voice"></div>';
+  el.querySelector(".name").textContent = m.name;
+  el.querySelector(".role").textContent = m.role;
+  el.querySelector(".voice").textContent = "rime · " + m.voice;
+  return el;
+}
+
 function drawPanel(members) {
-  $("panel").innerHTML = "";
+  ["panel-landing", "panel-room"].forEach((id) => { $(id).innerHTML = ""; });
   members.forEach((m) => {
-    const el = document.createElement("div");
-    el.className = "who";
-    el.innerHTML = `<div class="name"></div><div class="role"></div><div class="voice"></div>`;
-    el.querySelector(".name").textContent = m.name;
-    el.querySelector(".role").textContent = m.role;
-    el.querySelector(".voice").textContent = "rime:" + m.voice;
-    $("panel").append(el);
-    SEATS[m.id] = el;
+    NAMES[m.id] = m.name;
+    SEATS[m.id] = ["panel-landing", "panel-room"].map((id) => {
+      const el = card(m);
+      $(id).append(el);
+      return el;
+    });
   });
 }
 
 function speaking(id) {
-  Object.entries(SEATS).forEach(([key, el]) => el.classList.toggle("speaking", key === id));
+  Object.entries(SEATS).forEach(([key, els]) =>
+    els.forEach((el) => el.classList.toggle("speaking", key === id))
+  );
 }
 
-function nameFor(id) {
-  const el = SEATS[id];
-  return el ? el.querySelector(".name").textContent : id;
-}
+const nameFor = (id) => NAMES[id] || id;
 
-function addTurn(kind, by, build) {
-  $("empty")?.remove();
+// Content always goes in as text, never as markup: it crosses a process boundary.
+function renderTurn(into, turn) {
   const el = document.createElement("div");
-  el.className = "turn " + kind;
-  const who = document.createElement("div");
-  who.className = "by";
-  who.textContent = by;
-  const said = document.createElement("div");
-  said.className = "said";
-  el.append(who, said);
-  build(said, el);
-  feed.append(el);
-  el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  el.className = "turn " + turn.kind;
+  const by = document.createElement("div");
+  by.className = "by";
+  by.textContent = turn.by;
+  const text = document.createElement("div");
+  text.className = "text";
+  text.textContent = turn.heard;
+  if (turn.dropped) {
+    const gone = document.createElement("span");
+    gone.className = "gone";
+    gone.textContent = " " + turn.dropped;
+    text.append(gone);
+  }
+  el.append(by, text);
+  if (turn.meta) {
+    const meta = document.createElement("div");
+    meta.className = "meta" + (turn.kind === "cut" ? " cutline" : "");
+    meta.textContent = turn.meta;
+    el.append(meta);
+  }
+  into.append(el);
   return el;
 }
 
-function showLookup(text, killed) {
-  const box = $("lookup");
-  box.classList.add("show");
-  box.classList.toggle("killed", !!killed);
+function addTurn(turn) {
+  $("empty")?.remove();
+  history.push(turn);
+  renderTurn($("feed"), turn).scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+
+function lookup(text, killed) {
+  $("lookup").classList.add("show");
+  $("lookup").classList.toggle("killed", !!killed);
   $("lookuptext").textContent = text;
 }
 
-function hideLookup() {
-  $("lookup").classList.remove("show", "killed");
-}
-
-// Every message is written by our own agent, but it still crosses a process
-// boundary, so treat it as data and never as markup.
 function handle(ev) {
   switch (ev.type) {
     case "roster":
       drawPanel(ev.panel);
       break;
-
     case "floor":
       speaking(ev.speaker);
-      $("rationale").textContent = ev.rationale ? "→ " + ev.rationale : "";
+      $("why").textContent = ev.rationale ? "The panel chose " + ev.name + " — " + ev.rationale : "";
       break;
-
     case "candidate":
-      addTurn("candidate", "You", (said) => { said.textContent = ev.text; });
+      addTurn({ kind: "you", by: "You", heard: ev.text });
       break;
-
     case "committed":
-      addTurn("panelist", nameFor(ev.speaker), (said, el) => {
-        said.textContent = ev.text;
-        const ms = document.createElement("div");
-        ms.className = "heardms";
-        ms.textContent = ev.heard_ms + "ms of audio played";
-        el.append(ms);
+      addTurn({
+        kind: "said", by: nameFor(ev.speaker), heard: ev.text,
+        meta: ev.heard_ms + " ms of audio played",
       });
       speaking(null);
-      hideLookup();
+      $("lookup").classList.remove("show", "killed");
       break;
-
-    // The whole product, on screen: what reached you, and what never did.
     case "interrupted":
-      addTurn("cut", nameFor(ev.speaker) + " — interrupted", (said, el) => {
-        said.textContent = ev.heard;
-        if (ev.unheard) {
-          const gone = document.createElement("span");
-          gone.className = "gone";
-          gone.textContent = " " + ev.unheard;
-          said.append(gone);
-        }
-        const mark = document.createElement("div");
-        mark.className = "cutmark";
-        mark.textContent = ev.unheard
-          ? `cut at ${ev.at_ms}ms — struck-through words were never spoken`
-          : `cut at ${ev.at_ms}ms — nothing had played yet`;
-        el.append(mark);
+      interruptions += 1;
+      addTurn({
+        kind: "cut", by: nameFor(ev.speaker) + " · interrupted",
+        heard: ev.heard, dropped: ev.unheard,
+        meta: ev.unheard
+          ? "cut at " + ev.at_ms + " ms — struck-through words were never spoken"
+          : "cut at " + ev.at_ms + " ms — nothing had played yet",
       });
       speaking(null);
       break;
-
     case "lookup_started":
-      showLookup("Checking the benchmark for “" + ev.claim + "”…", false);
+      lookup("Checking the benchmark for “" + ev.claim + "”…", false);
       break;
-
     case "lookup_returned":
-      showLookup("Benchmark found: " + ev.metric, false);
+      lookup("Benchmark found for " + ev.metric, false);
       break;
-
     case "lookup_discarded":
-      showLookup("Lookup discarded — you changed the question while it was running", true);
+      lookup("Lookup discarded — you changed the question while it was still running", true);
       break;
   }
 }
 
-async function join() {
-  $("join").disabled = true;
+async function begin() {
+  $("begin").disabled = true;
   setState("connecting", false);
   try {
     const res = await fetch("/api/join");
     if (!res.ok) throw new Error(await res.text());
     const { url, token } = await res.json();
 
+    history = [];
+    interruptions = 0;
+    $("feed").innerHTML = '<div class="empty" id="empty">Waiting for the panel…</div>';
+
     room = new LK.Room({ adaptiveStream: true, dynacast: true });
     room.on(LK.RoomEvent.DataReceived, (payload) => {
-      try {
-        handle(JSON.parse(new TextDecoder().decode(payload)));
-      } catch (err) {
-        console.warn("unreadable panel message", err);
-      }
+      try { handle(JSON.parse(new TextDecoder().decode(payload))); }
+      catch (err) { console.warn("unreadable panel message", err); }
     });
-    room.on(LK.RoomEvent.TrackSubscribed, (track) => {
-      if (track.kind === LK.Track.Kind.Audio) track.attach();
+    room.on(LK.RoomEvent.TrackSubscribed, (t) => {
+      if (t.kind === LK.Track.Kind.Audio) t.attach();
     });
-    room.on(LK.RoomEvent.Disconnected, () => {
-      setState("offline", false);
-      $("join").disabled = false;
-      $("leave").disabled = true;
-      speaking(null);
-    });
+    room.on(LK.RoomEvent.Disconnected, () => finish());
 
     await room.connect(url, token);
     await room.localParticipant.setMicrophoneEnabled(true);
     setState("live", true);
-    $("leave").disabled = false;
-    $("hint").textContent = "Cut in mid-sentence. The panel will hand over.";
+    show("room");
   } catch (err) {
-    setState("failed", false);
-    $("hint").textContent = "Could not join: " + err.message;
-    $("join").disabled = false;
+    setState("could not connect", false);
+    $("begin").disabled = false;
+    alert("Could not start: " + err.message);
   }
 }
 
-// Show the panel before anyone joins, so the page is never a blank shell.
-fetch("/api/panel")
-  .then((r) => r.json())
-  .then((ev) => drawPanel(ev.panel))
-  .catch(() => {});
+function finish() {
+  if (room) { room.disconnect(); room = null; }
+  setState("finished", false);
+  $("begin").disabled = false;
+  speaking(null);
 
-$("join").addEventListener("click", join);
-$("leave").addEventListener("click", () => room && room.disconnect());
+  const asked = history.filter((t) => t.kind !== "you").length;
+  const yours = history.filter((t) => t.kind === "you").length;
+  $("tally").innerHTML = "";
+  [[asked, "questions the panel asked"],
+   [yours, "answers you gave"],
+   [interruptions, interruptions === 1 ? "time you cut in" : "times you cut in"]
+  ].forEach(([n, label]) => {
+    const el = document.createElement("div");
+    el.className = "stat";
+    el.innerHTML = '<div class="n"></div><div class="l"></div>';
+    el.querySelector(".n").textContent = n;
+    el.querySelector(".l").textContent = label;
+    $("tally").append(el);
+  });
+
+  const cuts = history.filter((t) => t.kind === "cut" && t.dropped);
+  $("verdict").innerHTML = "";
+  const strong = document.createElement("strong");
+  const rest = document.createTextNode(
+    cuts.length
+      ? " Those words were generated and never played, so they are not in the transcript above. Nothing you did not hear can be used as evidence about you."
+      : " Nothing was cut off this time. Try interrupting an interviewer mid-sentence and the dropped half will appear here."
+  );
+  strong.textContent = cuts.length
+    ? `You cut across an interviewer ${cuts.length === 1 ? "once" : cuts.length + " times"}.`
+    : "No interruptions this session.";
+  $("verdict").append(strong, rest);
+
+  $("record").innerHTML = "";
+  if (history.length) history.forEach((t) => renderTurn($("record"), t));
+  show("summary");
+}
+
+fetch("/api/panel").then((r) => r.json()).then((ev) => drawPanel(ev.panel)).catch(() => {});
+$("begin").addEventListener("click", begin);
+$("finish").addEventListener("click", finish);
+$("again").addEventListener("click", () => { show("landing"); setState("not started", false); });
 </script>
 </body>
 </html>

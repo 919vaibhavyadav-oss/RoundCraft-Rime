@@ -10,6 +10,8 @@ RUN uv pip install --system --no-cache .
 
 COPY app ./app
 COPY scripts ./scripts
+# The same image serves the candidate's interface; render.yaml overrides CMD.
+COPY web ./web
 
 # Downloads the turn-detection and VAD weights at build time rather than on the
 # first call, so the first interview of the day is not the slow one.

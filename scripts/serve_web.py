@@ -22,7 +22,10 @@ from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / "web"
-PORT = int(os.environ.get("WEB_PORT", "8080"))
+# Render (and most hosts) hand the port in and expect a bind on all
+# interfaces. Locally the default keeps it off the network.
+PORT = int(os.environ.get("PORT") or os.environ.get("WEB_PORT") or "8080")
+HOST = os.environ.get("WEB_HOST") or ("0.0.0.0" if os.environ.get("PORT") else "127.0.0.1")
 
 sys.path.insert(0, str(ROOT))
 
@@ -112,10 +115,11 @@ def main() -> int:
             print(f"{name} is not set. Run: uv run python scripts/setup.py")
             return 1
 
-    print(f"\n  RoundCraft is at  http://localhost:{PORT}\n")
+    where = f"http://localhost:{PORT}" if HOST == "127.0.0.1" else f"{HOST}:{PORT}"
+    print(f"\n  RoundCraft is at  {where}\n")
     print("  Leave the agent running in its own terminal, then open that link")
-    print("  and click Join. Ctrl+C here to stop.\n")
-    ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
+    print("  and start an interview. Ctrl+C here to stop.\n")
+    ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
     return 0
 
 

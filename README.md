@@ -131,6 +131,26 @@ Credentials are read from the environment only. `.env` is gitignored,
 `.env.example` holds placeholders alone, and CI fails the build if anything
 key-shaped reaches the tree.
 
+## Deploying
+
+`render.yaml` declares two services from one image. The agent is a worker: it
+dials out to LiveKit and serves no inbound traffic, so it has no URL. The
+interface is a web service that serves the page and mints the join token.
+
+The split matters. Only the web service holds `LIVEKIT_API_SECRET`, and only to
+sign a short-lived token scoped to one room. The Rime, Deepgram and model
+credentials live on the worker alone and never reach anything the browser talks
+to.
+
+1. On Render, **New → Blueprint**, point it at this repository.
+2. Set the eight worker secrets and the three web secrets in the dashboard.
+   Nothing is committed, and the non-secret values are pinned in `render.yaml`
+   so a deployment cannot quietly differ from the demo.
+3. Open the web service's URL and start an interview.
+
+The worker must be running for anything to happen: with it stopped, a candidate
+joins a room that nobody else is in.
+
 ## Known limitations and failure behaviour
 
 - If Rime is unavailable the session surfaces the failure rather than silently

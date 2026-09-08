@@ -1,5 +1,14 @@
-# The agent is a background worker, not a web service: it connects out to
-# LiveKit and waits to be assigned a room.
+# Two services from one image.
+#
+# The agent is a background worker: it connects out to LiveKit and waits to be
+# assigned a room, so it serves no inbound traffic and needs no domain. The
+# interface is an ordinary web service that serves the page and mints the join
+# token, which is what keeps the LiveKit secret out of the browser.
+#
+# Every credential is set in the Render dashboard and none are committed. The
+# non-secret values are pinned here on purpose: each was chosen for a reason
+# recorded in README.md, and a deployment that quietly differed from the demo
+# would be the exact class of failure this project spent the day fixing.
 services:
   - type: worker
     name: roundcraft-rime-agent
@@ -7,7 +16,6 @@ services:
     dockerfilePath: ./Dockerfile
     plan: starter
     envVars:
-      # Every value is set in the Render dashboard. None are committed.
       - key: RIME_API_KEY
         sync: false
       - key: LIVEKIT_URL
@@ -28,3 +36,36 @@ services:
         value: coda
       - key: RIME_LANG
         value: eng
+      # 48kHz throughout, matching what LiveKit rooms carry. Anything else adds
+      # a resampler, and two resamplers starting together abort the process.
+      - key: RIME_SAMPLE_RATE
+        value: "48000"
+      - key: DEEPGRAM_SAMPLE_RATE
+        value: "48000"
+      # Free model tiers reject a request whose output *budget* exceeds their
+      # per-minute cap, before generating anything. An interview question is
+      # about thirty tokens.
+      - key: LLM_MAX_TOKENS
+        value: "150"
+      - key: LLM_REASONING_EFFORT
+        value: none
+      # The fixed delay the candidate is meant to interrupt.
+      - key: LOOKUP_DELAY_SECONDS
+        value: "3.0"
+
+  - type: web
+    name: roundcraft-rime-web
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: python scripts/serve_web.py
+    plan: starter
+    healthCheckPath: /api/panel
+    envVars:
+      # Only what is needed to mint a room token. The Rime, Deepgram and model
+      # credentials belong to the worker and are deliberately absent here.
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
