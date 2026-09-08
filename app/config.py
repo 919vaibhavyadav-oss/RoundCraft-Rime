@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     # --- Speech recognition ----------------------------------------------
     deepgram_api_key: str = ""
     deepgram_model: str = "nova-3"
+    # Match the browser's 48kHz so the room does not resample on the way in.
+    # Every resampler is another soxr instance, and soxr aborts the process
+    # when two of them initialise at once. Deepgram accepts 48000 directly.
+    deepgram_sample_rate: int = 48000
 
     # --- The model that writes each interviewer's question ----------------
     llm_base_url: str = ""

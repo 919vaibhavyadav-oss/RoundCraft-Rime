@@ -354,7 +354,7 @@ def build_session(settings: object | None = None) -> AgentSession[None]:
     del settings
     opening = voice_for(PANEL[0].id)
     return AgentSession[None](
-        stt=deepgram.STT(model=config.deepgram_model),
+        stt=deepgram.STT(model=config.deepgram_model, sample_rate=config.deepgram_sample_rate),
         llm=openai.LLM(
             model=config.llm_model,
             base_url=config.llm_base_url or NOT_GIVEN,
@@ -384,7 +384,16 @@ def build_session(settings: object | None = None) -> AgentSession[None]:
         # questions from fragments like "on MX", so each answer cost four calls
         # rather than one. We are on a free tier, and an interviewer who thinks
         # for a moment before speaking is not a defect in this product.
-        turn_handling={"preemptive_generation": {"enabled": False}},
+        turn_handling={
+            "preemptive_generation": {"enabled": False},
+            # Voice activity rather than the adaptive detector. The adaptive one
+            # streams microphone audio to a remote gateway every 100ms, which
+            # means another resampler running beside silero's, and soxr aborts
+            # the process when two of them start together. It also puts a
+            # network round trip inside the barge-in path, which is the one
+            # path in this product that must not wait on anything.
+            "interruption": {"mode": "vad"},
+        },
     )
 
 
