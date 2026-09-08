@@ -21,6 +21,9 @@ from app.panel.roster import PANEL
 from app.panel.voices import voice_for
 
 TOPIC = "roundcraft.panel"
+# The browser sends on its own topic, so the agent never mistakes a message
+# it published for one it received.
+CANDIDATE_TOPIC = "roundcraft.candidate"
 
 # Bumped when a field changes meaning, so an old page open in a tab cannot
 # quietly misread a new agent.

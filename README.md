@@ -92,6 +92,23 @@ were never spoken appear struck through beside them. The claim this project
 rests on should be watchable by the person it happens to, not reconstructed
 afterwards from a log.
 
+### The candidate's background
+
+The landing page asks for a CV, optionally. If one is given it is sent over the
+LiveKit data channel after joining, never in the join token or a URL, and the
+panel is told to ask about the work it names rather than in general terms.
+
+It is personal data and is handled narrowly: held in the agent process for one
+session, never written to disk, never logged (only its length is), and email
+addresses, phone numbers and links are stripped before it reaches the model.
+`app/panel/background.py` is pure and `tests/test_background.py` asserts all of
+that, including that a year range like "2021 - 2024" survives redaction — an
+earlier version deleted it as a phone number, which would have removed exactly
+the career timeline an interviewer wants to ask about.
+
+A candidate who skips the field gets an identical interview, asked in general
+terms.
+
 ## Third-party services
 
 - **Rime** — text to speech, the primary spoken output

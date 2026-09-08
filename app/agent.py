@@ -67,6 +67,7 @@ from app.config import get_settings  # noqa: E402
 if TYPE_CHECKING:
     from openai.types import ReasoningEffort
 from app.panel import director, events  # noqa: E402
+from app.panel.background import briefing, condense  # noqa: E402
 from app.panel.benchmarks import find_benchmark  # noqa: E402
 from app.panel.floor import WordTimeline  # noqa: E402
 from app.panel.roster import PANEL, opening_line  # noqa: E402
@@ -89,6 +90,14 @@ answer your own question.
 """
 
 
+def panel_instructions(background: str = "", turn: str = "") -> str:
+    """Everything the model is told: who the panel is, who is speaking now, and
+    what the candidate said about themselves. Empty parts are left out entirely,
+    so a candidate who supplied no background gets no empty heading."""
+    parts = (SYSTEM_PROMPT.strip(), briefing(background).strip(), turn.strip())
+    return "\n\n".join(part for part in parts if part)
+
+
 def turn_instruction(decision: director.Decision) -> str:
     """What this one interviewer is trying to get at, this turn."""
     return (
@@ -106,6 +115,10 @@ class PanelAgent(Agent):
         # The full text of the reply being generated, kept so an interruption
         # can report the half that never played.
         self._intended = ""
+        # What the candidate told us about themselves, for this session only.
+        # Never written anywhere, never logged: only its length is ever
+        # reported, which is enough to know it arrived.
+        self._background = ""
         # Set once the job starts. The interview does not depend on it: if the
         # browser is not listening, or publishing fails, nothing here changes.
         self.room: object | None = None
@@ -124,6 +137,28 @@ class PanelAgent(Agent):
         )
         # A dropped frame in the UI must never surface as a failed interview.
         task.add_done_callback(lambda t: t.exception() if not t.cancelled() else None)
+
+    def receive(self, packet: rtc.DataPacket) -> None:
+        """Take the candidate's background, if they sent one.
+
+        Bound to the room's data channel in `entrypoint`. The text itself is
+        never logged and never leaves this process except to the model that has
+        to read it in order to ask about the work: only its length is reported,
+        which is enough to know it arrived.
+        """
+        if packet.topic != events.CANDIDATE_TOPIC:
+            return
+        try:
+            message = json.loads(packet.data.decode("utf-8"))
+        except (ValueError, UnicodeDecodeError):
+            return
+        if not isinstance(message, dict) or message.get("type") != "background":
+            return
+        self._background = condense(str(message.get("text", "")))
+        logger.info(
+            "candidate background received: %s characters after condensing",
+            len(self._background),
+        )
 
     # -- opening -------------------------------------------------------------
 
@@ -506,6 +541,10 @@ async def entrypoint(ctx: agents.JobContext) -> None:
 
     agent = PanelAgent()
     agent.room = ctx.room
+    # The candidate's background arrives over the data channel rather than in
+    # the join token, so it never appears in a URL, a log line or a JWT that
+    # outlives the session.
+    ctx.room.on("data_received", agent.receive)
     session = build_session()
     session.on("speech_created", agent.watch_speech)
 

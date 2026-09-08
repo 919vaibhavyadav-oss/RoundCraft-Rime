@@ -64,7 +64,15 @@
     font: 400 15px var(--body); width: 100%; padding: 10px 13px;
     border: 1px solid var(--rule-2); border-radius: 7px; background: var(--sheet); color: var(--ink);
   }
-  input:focus-visible { outline: 2px solid var(--mark); outline-offset: 1px; border-color: var(--mark); }
+  input:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--mark); outline-offset: 1px; border-color: var(--mark);
+  }
+  textarea {
+    font: 400 14px/1.5 var(--body); width: 100%; padding: 10px 13px; resize: vertical;
+    min-height: 84px; border: 1px solid var(--rule-2); border-radius: 7px;
+    background: var(--sheet); color: var(--ink);
+  }
+  .privacy { font-size: 12px; color: var(--ink-3); margin-top: 6px; }
 
   .top { display: flex; align-items: center; gap: 12px; padding: 22px 0 16px; border-bottom: 1px solid var(--rule); }
   .brand { font: 500 18px var(--display); letter-spacing: -.01em; }
@@ -222,6 +230,14 @@
             <input id="name" name="name" placeholder="Vaibhav" maxlength="40" autocomplete="name"></div>
           <div id="codewrap" hidden><label for="code">Access code</label>
             <input id="code" name="code" placeholder="••••••" maxlength="64" autocomplete="off"></div>
+        </div>
+        <div style="margin-top:14px">
+          <label for="cv">Your CV or a short background <span style="font-weight:400;color:var(--ink-3)">(optional)</span></label>
+          <textarea id="cv" name="cv" maxlength="8000" placeholder="Paste your CV, or a few lines about what you have shipped. The panel will ask about your actual work rather than in general terms."></textarea>
+          <div class="privacy">
+            Held for this session only. Never saved, never logged. Email addresses,
+            phone numbers and links are stripped before the panel sees it.
+          </div>
         </div>
         <div class="go">
           <button type="submit" id="begin">Join the interview</button>
@@ -494,6 +510,21 @@ async function begin(e) {
     setState("live", true);
     started = Date.now();
     ticker = setInterval(() => { $("clock").textContent = clock(Date.now() - started); }, 1000);
+
+    // Sent over the data channel rather than in the join token, so it never
+    // lands in a URL, a log line, or a JWT that outlives the session.
+    const cv = $("cv").value.trim();
+    if (cv) {
+      try {
+        await room.localParticipant.publishData(
+          new TextEncoder().encode(JSON.stringify({ type: "background", text: cv })),
+          { reliable: true, topic: "roundcraft.candidate" },
+        );
+      } catch (err) {
+        // The interview is worth more than the personalisation.
+        console.warn("could not send background", err);
+      }
+    }
 
     const track = pub && pub.track ? pub.track : room.localParticipant.getTrackPublication?.(LK.Track.Source.Microphone)?.track;
     if (track) watchLevel(track);
