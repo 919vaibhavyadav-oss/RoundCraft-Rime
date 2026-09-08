@@ -55,8 +55,10 @@ from livekit.agents import (  # noqa: E402
     SpeechCreatedEvent,
     StopResponse,
     function_tool,
-    stt,  # noqa: E402
+    llm,
+    stt,
 )
+from livekit.agents.types import FlushSentinel  # noqa: E402
 from livekit.agents.voice.io import TimedString  # noqa: E402
 from livekit.plugins import deepgram, openai, rime, silero  # noqa: E402
 
@@ -101,6 +103,9 @@ class PanelAgent(Agent):
     def __init__(self) -> None:
         super().__init__(instructions=SYSTEM_PROMPT)
         self.interview = InterviewSession()
+        # The full text of the reply being generated, kept so an interruption
+        # can report the half that never played.
+        self._intended = ""
         # Set once the job starts. The interview does not depend on it: if the
         # browser is not listening, or publishing fails, nothing here changes.
         self.room: object | None = None
@@ -189,10 +194,42 @@ class PanelAgent(Agent):
                 decision.rationale,
             )
         )
-        # The system prompt establishes the panel; this establishes which member
-        # of it is speaking right now. It is added per turn rather than kept in
-        # the context, so the model never holds two conflicting identities.
-        turn_ctx.add_message(role="system", content=turn_instruction(decision))
+        # Steering goes into the instructions, not into the conversation. A live
+        # session had an interviewer read the direction out loud, word for word:
+        # "Speak now as Noah Williams, the Product Sense Interviewer. Objective
+        # (clarify): ...". A message sitting after the candidate's turn looks
+        # enough like something to continue that the model continued it.
+        # Instructions are the one place the model treats as addressed to it.
+        await self.update_instructions(f"{SYSTEM_PROMPT}\n\n{turn_instruction(decision)}")
+
+    # -- the sentence the interviewer meant to say ---------------------------
+
+    async def llm_node(
+        self, chat_ctx: llm.ChatContext, tools: list[llm.Tool], model_settings: ModelSettings
+    ) -> AsyncIterable[llm.ChatChunk | str | FlushSentinel]:
+        """Keep the whole reply as it is generated, before playback truncates it.
+
+        On an interruption LiveKit shortens the stored message to what was
+        actually played, which is right for the transcript and useless for
+        saying what was dropped: the two become identical and every cut reports
+        that nothing was lost. The model finishes writing long before the audio
+        finishes playing, so the complete sentence exists here and nowhere else
+        by the time it is needed.
+        """
+        self._intended = ""
+
+        async def kept() -> AsyncGenerator[llm.ChatChunk | str | FlushSentinel, None]:
+            stream = Agent.default.llm_node(self, chat_ctx, tools, model_settings)
+            resolved = await stream if asyncio.iscoroutine(stream) else stream
+            async for chunk in resolved:
+                piece = getattr(getattr(chunk, "delta", None), "content", None)
+                if isinstance(piece, str):
+                    self._intended += piece
+                elif isinstance(chunk, str):
+                    self._intended += chunk
+                yield chunk
+
+        return kept()
 
     # -- is anything actually arriving ---------------------------------------
 
@@ -335,7 +372,9 @@ class PanelAgent(Agent):
                 # that never played are otherwise unrepresentable: the timing
                 # stream only ever reports a word once it has been heard.
                 if self.interview.floor.accepts(generation):
-                    self._close_interrupted_turn(intended=spoken)
+                    # self._intended is the untruncated reply; `spoken` has
+                    # already been shortened to what was played.
+                    self._close_interrupted_turn(intended=self._intended or spoken)
                 else:
                     logger.debug("speech handle discarded at gen %s", generation)
                 return
