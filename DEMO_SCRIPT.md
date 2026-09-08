@@ -16,7 +16,8 @@ Read the **bold** lines aloud. Everything else is what should happen.
       Suspend). Two workers are registered and each take is a coin toss between
       them. Resume it after filming so judges can reach it.
 - [ ] <http://localhost:8080> open, three interviewers showing
-- [ ] A terminal visible somewhere on screen — the log lines are evidence
+- [ ] One terminal open for the test run at the end. Nothing else needs it:
+      the interface shows the cut, the milliseconds and the audio played.
 - [ ] **No `.env`, no dashboard with a key, nothing showing a credential.** The
       rules name recordings explicitly: an exposed credential is an eligibility
       failure, not a deduction.
@@ -121,18 +122,13 @@ Click **End interview**. The session record appears.
 
 ## 3:15 — The measurement
 
-Switch to the terminal:
-
-```
-interrupted analytics at 4820ms; heard '...', dropped '...'
-committed gen 5 after 3609ms of audio: ...
-```
+Stay on the session record. Point at the millisecond stamps under each turn.
 
 > **"Every turn reports how many milliseconds of audio actually played. If that
-> ever reads zero, the word timings are gone and the cut point is guesswork, so
-> it warns. That check caught three real bugs during this build."**
+> ever reads zero the word timings are gone and the cut point is guesswork, so
+> the agent warns. That check caught three real bugs during this build."**
 
-Then run:
+Then switch to a terminal and run:
 
 ```bash
 uv run pytest -q
