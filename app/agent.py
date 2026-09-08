@@ -531,13 +531,19 @@ def build_session(settings: object | None = None) -> AgentSession[None]:
             #
             # Resuming is the abandoned turn re-entering the conversation, which
             # is the failure this whole build exists to prevent. An interruption
-            # here ends the turn. min_duration comes down with it, because half
-            # a second of speech before a barge-in counts is long enough to hear
-            # several more words of a sentence you meant to stop.
+            # here ends the turn.
+            #
+            # min_duration is the tail of the candidate's own answer, not their
+            # barge-in. At 0.25s a live session killed two turns 94ms and 399ms
+            # after they began, before either had played a word: the candidate
+            # was still finishing a sentence when the panel took the floor, and
+            # that trailing speech read as an interruption. 0.4s is long enough
+            # to be someone deliberately cutting in and short enough that a real
+            # barge-in still lands within a word or two.
             "interruption": {
                 "mode": "vad",
                 "resume_false_interruption": False,
-                "min_duration": 0.25,
+                "min_duration": 0.4,
             },
         },
     )
