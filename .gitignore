@@ -11,3 +11,7 @@ __pycache__/
 # Local run log from the agent worker.
 agent.log
 web_server.log
+
+# The demo recording lives beside the repo but is not part of it.
+Video Project*.mp4
+*.mp4
