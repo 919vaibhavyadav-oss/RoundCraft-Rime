@@ -185,6 +185,11 @@
   .round.end { background: var(--cut); border-color: var(--cut); color: #fff; width: auto; border-radius: 26px; padding: 0 24px; gap: 9px; font: 500 14.5px var(--body); }
   .round svg { width: 20px; height: 20px; fill: currentColor; }
   .controls .label { font: 400 12.5px var(--body); color: var(--on-stage-2); margin-left: 6px; }
+  .controls select {
+    font: 400 13px var(--body); max-width: 260px; padding: 8px 11px; border-radius: 7px;
+    background: #262a31; color: var(--on-stage); border: 1px solid #343945;
+  }
+  .controls select:focus-visible { outline: 2px solid var(--mark); outline-offset: 2px; }
 
   /* ── transcript, shared by call side panel and summary ───── */
   .feed { border-top: 1px solid var(--rule); }
@@ -309,6 +314,7 @@
       <svg viewBox="0 0 24 24" id="micicon"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M18 11a1 1 0 0 0-2 0 4 4 0 0 1-8 0 1 1 0 0 0-2 0 6 6 0 0 0 5 5.9V20H9a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2h-2v-3.1A6 6 0 0 0 18 11z"/></svg>
     </button>
     <span class="label" id="miclabel">Microphone on</span>
+    <select id="mics" aria-label="Microphone"><option>Default microphone</option></select>
     <button class="round end" id="hangup">End interview</button>
   </div>
 </div>
@@ -479,8 +485,8 @@ function watchLevel(track) {
         const el = $("silent");
         el.hidden = false;
         el.textContent =
-          "No sound from this microphone yet. Check the mic Chrome is using " +
-          "(click the icon left of the address bar) and that Windows input is not muted.";
+          "No sound from this microphone. Try another one from the list at the " +
+          "bottom of the screen — the bar above should move while you speak.";
       }
     }, 12000);
   } catch (err) {
@@ -549,6 +555,8 @@ async function begin(e) {
       }
     }
 
+    await listMicrophones();
+
     const track = pub && pub.track ? pub.track : room.localParticipant.getTrackPublication?.(LK.Track.Source.Microphone)?.track;
     if (track) watchLevel(track);
     else $("silent").hidden = false, ($("silent").textContent = "No microphone track was published.");
@@ -556,6 +564,43 @@ async function begin(e) {
     setState("not started", false);
     $("err").textContent = err.message;
     $("begin").disabled = false;
+  }
+}
+
+// Device labels are only readable once microphone permission has been granted,
+// which is why this runs after joining rather than on the landing page.
+async function listMicrophones() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const mics = devices.filter((d) => d.kind === "audioinput");
+    const select = $("mics");
+    select.innerHTML = "";
+    mics.forEach((d, i) => {
+      const option = document.createElement("option");
+      option.value = d.deviceId;
+      option.textContent = d.label || `Microphone ${i + 1}`;
+      select.append(option);
+    });
+    const active = room?.getActiveDevice?.("audioinput");
+    if (active) select.value = active;
+  } catch (err) {
+    console.warn("could not list microphones", err);
+  }
+}
+
+async function switchMicrophone() {
+  if (!room) return;
+  try {
+    await room.switchActiveDevice("audioinput", $("mics").value);
+    // The old track is gone, so the meter has to be pointed at the new one.
+    stopLevel();
+    heardAnything = false;
+    silenceWarned = false;
+    $("silent").hidden = true;
+    const pub = room.localParticipant.getTrackPublication?.(LK.Track.Source.Microphone);
+    if (pub && pub.track) watchLevel(pub.track);
+  } catch (err) {
+    console.warn("could not switch microphone", err);
   }
 }
 
@@ -614,6 +659,7 @@ fetch("/api/session").then((r) => r.json()).then((s) => { $("codewrap").hidden =
 fetch("/api/panel").then((r) => r.json()).then((ev) => drawSeats(ev.panel)).catch(() => {});
 $("gate").addEventListener("submit", begin);
 $("mic").addEventListener("click", toggleMic);
+$("mics").addEventListener("change", switchMicrophone);
 $("hangup").addEventListener("click", hangup);
 $("again").addEventListener("click", () => {
   $("summary").hidden = true; $("landing").hidden = false; setState("not started", false);
