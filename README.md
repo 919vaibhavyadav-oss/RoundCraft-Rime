@@ -91,11 +91,31 @@ key-shaped reaches the tree.
   disclosed here and made observable in the demo, per the event rules.
 - The floor guard is pure logic covering what the application *chooses* to play;
   playback stop latency belongs to LiveKit and is measured in the evidence file.
-- Word-level cut points require Rime websocket streaming. Without it the cut
-  point degrades to elapsed-time estimation.
+- Word-level cut points need two settings, not one: `RIME_USE_WEBSOCKET` so Rime
+  sends per-word offsets, and `use_tts_aligned_transcript` so LiveKit delivers
+  them. The second defaults to off and fails silently, so the agent logs the
+  audio each turn timed and warns on zero.
 - Tested with three interviewers.
 
 ## Status
 
-Phase 1 of 6. The floor guard and voice mapping are implemented and tested; the
-LiveKit agent wiring is in progress.
+The panel runs live. A session dispatches to the worker, the hiring manager
+opens in her own Rime voice, the director picks each next interviewer from what
+the candidate actually said, and the voice switches per turn on one Rime
+connection. 77 tests pass, 43 of them covering the interruption claim.
+
+Three defects found by running it, each fixed and each now covered:
+
+| Found | Cause |
+| --- | --- |
+| Every turn cost four model calls | Preemptive generation writing questions from partial transcripts |
+| Turns timed 0ms of audio | `use_tts_aligned_transcript` defaults off, discarding Rime's alignment |
+| A 13.5s greeting timed 5.1s | Rime's offsets restart per synthesis request, one per sentence |
+
+None of them could fail a unit test: the tests were right about the code and
+wrong about the world. What caught the last two was a runtime assertion that
+reports how many milliseconds of audio each turn actually played, and warns on
+zero. It is deliberately still in the code.
+
+Outstanding: the live barge-in measurements in `RIME_EVIDENCE.md`, which need a
+recorded session rather than more code.
