@@ -24,9 +24,11 @@ the exact shape of the configuration drift that cost us a week on the other
 build.
 """
 
+import array
 import asyncio
 import json
 import logging
+import time
 from typing import TYPE_CHECKING, cast
 
 from dotenv import load_dotenv
@@ -40,7 +42,7 @@ load_dotenv()
 
 from collections.abc import AsyncGenerator, AsyncIterable  # noqa: E402
 
-from livekit import agents  # noqa: E402
+from livekit import agents, rtc  # noqa: E402
 from livekit.agents import (  # noqa: E402
     NOT_GIVEN,
     Agent,
@@ -53,6 +55,7 @@ from livekit.agents import (  # noqa: E402
     SpeechCreatedEvent,
     StopResponse,
     function_tool,
+    stt,  # noqa: E402
 )
 from livekit.agents.voice.io import TimedString  # noqa: E402
 from livekit.plugins import deepgram, openai, rime, silero  # noqa: E402
@@ -190,6 +193,53 @@ class PanelAgent(Agent):
         # of it is speaking right now. It is added per turn rather than kept in
         # the context, so the model never holds two conflicting identities.
         turn_ctx.add_message(role="system", content=turn_instruction(decision))
+
+    # -- is anything actually arriving ---------------------------------------
+
+    async def stt_node(
+        self, audio: AsyncIterable[rtc.AudioFrame], model_settings: ModelSettings
+    ) -> AsyncIterable[stt.SpeechEvent | str]:
+        """Report the level of the audio reaching recognition, then pass it on.
+
+        Three sessions produced a greeting and then silence, with the speech
+        service connected and the microphone track attached. Nothing in the
+        system could say whether the frames arriving here carried sound, so two
+        fixes were attempted on guesses and neither moved it.
+
+        This measures. A peak near zero means nothing is reaching us and no
+        change downstream can help; a healthy peak with no transcript means the
+        fault is ours. Cheap enough to leave in: a few dozen samples per frame,
+        summarised every couple of seconds.
+        """
+
+        async def measured() -> AsyncGenerator[rtc.AudioFrame, None]:
+            peak = 0
+            frames = 0
+            rate = 0
+            last = time.monotonic()
+            async for frame in audio:
+                frames += 1
+                rate = frame.sample_rate
+                samples = array.array("h")
+                samples.frombytes(bytes(frame.data))
+                if samples:
+                    # Every sixteenth sample is plenty to know whether a person
+                    # is speaking, and keeps this off the critical path.
+                    peak = max(peak, max(abs(v) for v in samples[::16]))
+                now = time.monotonic()
+                if now - last >= 2.0:
+                    logger.info(
+                        "mic: peak %s/32768 over %s frames at %sHz%s",
+                        peak,
+                        frames,
+                        rate,
+                        "  <- SILENT, nothing is reaching the agent" if peak < 200 else "",
+                    )
+                    peak = frames = 0
+                    last = now
+                yield frame
+
+        return Agent.default.stt_node(self, measured(), model_settings)
 
     # -- what the candidate actually heard -----------------------------------
 
