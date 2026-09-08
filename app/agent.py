@@ -48,6 +48,7 @@ from livekit.agents import (  # noqa: E402
     ChatContext,
     ChatMessage,
     ModelSettings,
+    RoomInputOptions,
     RunContext,
     SpeechCreatedEvent,
     StopResponse,
@@ -419,7 +420,20 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     session = build_session()
     session.on("speech_created", agent.watch_speech)
 
-    await session.start(room=ctx.room, agent=agent)
+    await session.start(
+        room=ctx.room,
+        agent=agent,
+        # The room's input rate is its own setting, not one it takes from the
+        # speech recogniser. Left at its 24kHz default while Deepgram was told
+        # 48000, it resampled the browser's audio down and then labelled it at
+        # double its real rate, and Deepgram returned nothing at all for a whole
+        # session. Voice activity kept firing, because it reads energy on a
+        # separate path, so the room looked alive while hearing nothing.
+        #
+        # Setting both to what the browser already publishes means no resampling
+        # and no mislabelling.
+        room_input_options=RoomInputOptions(audio_sample_rate=config.deepgram_sample_rate),
+    )
 
 
 if __name__ == "__main__":
