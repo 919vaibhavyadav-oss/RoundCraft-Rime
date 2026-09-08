@@ -521,7 +521,24 @@ def build_session(settings: object | None = None) -> AgentSession[None]:
             # the process when two of them start together. It also puts a
             # network round trip inside the barge-in path, which is the one
             # path in this product that must not wait on anything.
-            "interruption": {"mode": "vad"},
+            #
+            # resume_false_interruption defaults to true, and a live session
+            # showed exactly what that means here: the candidate cut in, the
+            # panel stopped, decided the interruption was not real, and finished
+            # the sentence over them. It then counted as fully heard, so nothing
+            # was recorded as dropped and the transcript was right about a
+            # conversation that should not have happened.
+            #
+            # Resuming is the abandoned turn re-entering the conversation, which
+            # is the failure this whole build exists to prevent. An interruption
+            # here ends the turn. min_duration comes down with it, because half
+            # a second of speech before a barge-in counts is long enough to hear
+            # several more words of a sentence you meant to stop.
+            "interruption": {
+                "mode": "vad",
+                "resume_false_interruption": False,
+                "min_duration": 0.25,
+            },
         },
     )
 

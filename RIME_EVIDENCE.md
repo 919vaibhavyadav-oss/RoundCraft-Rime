@@ -137,6 +137,13 @@ labelled separately:
 - The floor guard is pure logic. It guarantees the application never *chooses*
   to play stale audio; the stop latency itself belongs to LiveKit's playback
   pipeline and is measured separately in the live run above.
+- Interruption is final, not provisional. LiveKit resumes a speech it judges to
+  have been falsely interrupted, and a live session showed what that means here:
+  the candidate cut in, the panel stopped, then finished the sentence over them
+  and counted it as fully heard. Resuming is the abandoned turn re-entering the
+  conversation, so `resume_false_interruption` is off and a barge-in ends the
+  turn. The cost is that a cough can end a question; the alternative is a
+  transcript that is right about a conversation which did not happen.
 - Word timestamps require two things, not one. `RIME_USE_WEBSOCKET` makes Rime
   *send* per-word offsets; `use_tts_aligned_transcript` makes LiveKit *deliver*
   them to the node that records what played. The second defaults to off, and
