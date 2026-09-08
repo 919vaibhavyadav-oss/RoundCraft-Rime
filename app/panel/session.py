@@ -79,14 +79,14 @@ class InterviewSession:
         self._generation = self.floor.take_floor(decision.speaker.id)
         return decision
 
-    def candidate_interrupted(self, at_ms: int) -> Interruption | None:
+    def candidate_interrupted(self, at_ms: int, intended: str | None = None) -> Interruption | None:
         """The candidate cut in. Keep only what they heard, and reopen the floor.
 
         The interrupted interviewer still counts as having spoken, because they
         did — the candidate heard part of it and is responding to that. What
         they do not get is credit for the part that never played.
         """
-        cut = self.floor.interrupt(at_ms)
+        cut = self.floor.interrupt(at_ms, intended)
         if cut is None or self._open is None:
             self._open = None
             return cut

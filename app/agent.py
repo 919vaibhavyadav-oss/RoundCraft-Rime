@@ -103,9 +103,12 @@ class PanelAgent(Agent):
 
     def announce(self, event: dict[str, object]) -> None:
         """Tell the room what the panel just did, without ever blocking it."""
-        room = self.room
-        publish = getattr(getattr(room, "local_participant", None), "publish_data", None)
-        if publish is None:
+        try:
+            # local_participant is a property that raises before the room is
+            # connected rather than being absent, so getattr's default never
+            # applies and this has to be a real try.
+            publish = self.room.local_participant.publish_data  # type: ignore[union-attr]
+        except Exception:
             return
         task = asyncio.create_task(
             publish(json.dumps(event), topic=events.TOPIC, reliable=True)
@@ -265,19 +268,23 @@ class PanelAgent(Agent):
 
         def committed(done: object) -> None:
             handle = done
-            if getattr(handle, "interrupted", False):
-                # Not necessarily a barge-in. A handle also reports interrupted
-                # when it was generated speculatively and thrown away, or when
-                # LiveKit later judges the interruption false and resumes. The
-                # truthful signal is the floor still being held when the
-                # candidate's turn commits, so truncation lives there.
-                logger.debug("speech handle discarded at gen %s", generation)
-                return
             spoken = " ".join(
                 item.text_content
                 for item in getattr(handle, "chat_items", [])
                 if isinstance(item, ChatMessage) and item.role == "assistant" and item.text_content
             ).strip()
+            if getattr(handle, "interrupted", False):
+                # The candidate cut across this. Truncate here rather than
+                # later, because this is the only place the sentence the
+                # interviewer *meant* to say is still available, and the words
+                # that never played are otherwise unrepresentable: the timing
+                # stream only ever reports a word once it has been heard.
+                if self.interview.floor.accepts(generation):
+                    self._close_interrupted_turn(intended=spoken)
+                else:
+                    logger.debug("speech handle discarded at gen %s", generation)
+                return
+
             heard_ms = self.interview.heard_ms()
             if spoken and self.interview.interviewer_finished(generation, spoken):
                 logger.info(
@@ -301,12 +308,14 @@ class PanelAgent(Agent):
 
     # -- internals -----------------------------------------------------------
 
-    def _close_interrupted_turn(self) -> None:
+    def _close_interrupted_turn(self, intended: str | None = None) -> None:
         """Truncate the turn in progress to the words that were played."""
         # Every word this turn played arrived through `transcription_node`, so
         # cutting just past the last of them keeps exactly what was heard. There
         # is nothing to estimate here: the stream itself is the evidence.
-        cut = self.interview.candidate_interrupted(at_ms=self.interview.heard_ms() + 1)
+        cut = self.interview.candidate_interrupted(
+            at_ms=self.interview.heard_ms() + 1, intended=intended
+        )
         if cut is None:
             return
         logger.info(

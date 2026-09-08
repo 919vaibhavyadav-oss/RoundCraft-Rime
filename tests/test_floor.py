@@ -153,3 +153,80 @@ def test_each_handover_is_a_new_generation() -> None:
 
     assert len(set(seen)) == len(seen), "generations must never repeat"
     assert seen == sorted(seen), "generations must move forward"
+
+
+class TestWhatWasNeverPlayed:
+    """The abandoned half is unrepresentable without the intended sentence.
+
+    Word timings only ever arrive for a word that has been played, so the floor
+    guard never learns the words the candidate did not hear. Given only those,
+    it would report that nothing was dropped while a sentence was visibly cut
+    off mid-clause. The interviewer's intended sentence is what closes that gap.
+    """
+
+    def spoken_prefix(self) -> list[SpokenWord]:
+        return [
+            SpokenWord("What", 0),
+            SpokenWord("tradeoff", 150),
+            SpokenWord("did", 400),
+            SpokenWord("you", 520),
+        ]
+
+    def test_without_the_intended_sentence_nothing_looks_dropped(self) -> None:
+        guard = FloorGuard()
+        generation = guard.take_floor("analytics")
+        guard.note_spoken(generation, self.spoken_prefix())
+
+        cut = guard.interrupt(at_ms=600)
+
+        assert cut is not None
+        assert cut.heard == "What tradeoff did you"
+        # Truthful, but useless: the rest was never reported to us.
+        assert cut.unheard == ""
+
+    def test_the_intended_sentence_reveals_what_was_dropped(self) -> None:
+        guard = FloorGuard()
+        generation = guard.take_floor("analytics")
+        guard.note_spoken(generation, self.spoken_prefix())
+
+        cut = guard.interrupt(
+            at_ms=600, intended="What tradeoff did you accept when you cut scope?"
+        )
+
+        assert cut is not None
+        assert cut.heard == "What tradeoff did you"
+        assert cut.unheard == "accept when you cut scope?"
+        assert cut.cut_mid_sentence is True
+
+    def test_a_sentence_that_finished_drops_nothing(self) -> None:
+        guard = FloorGuard()
+        generation = guard.take_floor("analytics")
+        guard.note_spoken(generation, self.spoken_prefix())
+
+        cut = guard.interrupt(at_ms=600, intended="What tradeoff did you")
+
+        assert cut is not None
+        assert cut.unheard == ""
+        assert cut.cut_mid_sentence is False
+
+    def test_nothing_heard_drops_the_whole_sentence(self) -> None:
+        guard = FloorGuard()
+        guard.take_floor("analytics")
+
+        cut = guard.interrupt(at_ms=0, intended="What tradeoff did you accept?")
+
+        assert cut is not None
+        assert cut.heard == ""
+        assert cut.unheard == "What tradeoff did you accept?"
+
+    def test_the_two_halves_reconstruct_the_whole_sentence(self) -> None:
+        """Neither half may invent or lose a word."""
+        intended = "What tradeoff did you accept when you cut scope?"
+        guard = FloorGuard()
+        generation = guard.take_floor("analytics")
+        guard.note_spoken(generation, self.spoken_prefix())
+
+        cut = guard.interrupt(at_ms=600, intended=intended)
+
+        assert cut is not None
+        assert f"{cut.heard} {cut.unheard}".split() == intended.split()

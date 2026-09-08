@@ -99,21 +99,30 @@ class FloorGuard:
         """
         return generation == self.generation and self.speaker_id is not None
 
-    def interrupt(self, at_ms: int) -> Interruption | None:
+    def interrupt(self, at_ms: int, intended: str | None = None) -> Interruption | None:
         """Cut the current speaker off, returning what was and was not heard.
 
         Returns None when nobody holds the floor, so a stray barge-in during
         silence cannot invent an empty turn in the transcript.
+
+        `intended` is the full sentence the interviewer meant to say. It is
+        needed because the words that were never played never reach us: this
+        guard only ever learns about a word once it has been heard. Without it
+        the abandoned half is not merely unknown, it is unrepresentable, and we
+        could assert that nothing was dropped while a sentence was visibly cut
+        off mid-clause.
         """
         if self.speaker_id is None:
             return None
         heard = [word for word in self._words if word.start_ms < at_ms]
-        unheard = [word for word in self._words if word.start_ms >= at_ms]
+        heard_text = " ".join(word.text for word in heard)
         interruption = Interruption(
             panelist_id=self.speaker_id,
             generation=self.generation,
-            heard=" ".join(word.text for word in heard),
-            unheard=" ".join(word.text for word in unheard),
+            heard=heard_text,
+            unheard=_remainder(intended, heard_text)
+            if intended
+            else " ".join(word.text for word in self._words if word.start_ms >= at_ms),
             at_ms=at_ms,
         )
         # Bumping here is what makes the in-flight response stale: whatever the
@@ -191,3 +200,13 @@ class WordTimeline:
         self._request_end_ms = max(self._request_end_ms, end_ms, word.start_ms)
         return SpokenWord(text=word.text, start_ms=self._base_ms + word.start_ms)
 
+
+def _remainder(intended: str, heard: str) -> str:
+    """The part of a sentence that was never played.
+
+    Compared word by word rather than by character offset, because the words
+    reported by the speech service carry their own spacing and punctuation and
+    will not line up with a slice of the original string.
+    """
+    spoken = len(heard.split())
+    return " ".join(intended.split()[spoken:])
