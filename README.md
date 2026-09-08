@@ -25,13 +25,20 @@ before submission.
 | Model | `coda` |
 | Speakers | `argon` (Hiring Manager), `arcade` (Product Sense), `astra` (Analytics) |
 | Language | `eng` |
-| Endpoint | Rime default, via the official LiveKit plugin |
-| Audio format | PCM |
+| Endpoint | `wss://users-ws.rime.ai` (streaming). The HTTP path `https://users.rime.ai/v1/rime-tts` is not used in the demo |
+| Region | Rime global endpoint; LiveKit Cloud project region `India South` |
+| Audio format | PCM, 16-bit mono |
 | Sample rate | 22050 Hz |
-| Transport | LiveKit WebRTC, Rime websocket streaming (`use_websocket=True`) |
+| Transport | Rime websocket streaming (`use_websocket=True`), carried to the browser over LiveKit WebRTC |
+| Framework | `livekit-agents` 1.8.0 with `livekit-plugins-rime` 1.8.0 |
+| Aligned transcript | Enabled. Requires **both** `use_websocket=True` and `AgentSession(use_tts_aligned_transcript=True)` |
 
 Speaker is set per turn through the plugin's `update_options`, which is what
-lets one session carry several interviewers.
+lets one session carry several interviewers on a single Rime connection.
+
+Rime is the only speech output. There is no fallback provider, so if Rime is
+unavailable the session surfaces the failure rather than substituting another
+voice. The active provider is therefore unambiguous throughout the demo.
 
 > Placeholders above are pinned in `app/panel/voices.py` and checked against the
 > live Rime catalogue by `verify_speakers` before each demo recording.
