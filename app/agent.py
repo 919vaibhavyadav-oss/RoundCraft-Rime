@@ -525,6 +525,14 @@ def build_session(settings: object | None = None) -> AgentSession[None]:
         # for a moment before speaking is not a defect in this product.
         turn_handling={
             "preemptive_generation": {"enabled": False},
+            # A candidate thinking mid-answer is not a candidate who has
+            # finished. At the 0.5s default a live transcript split one answer
+            # in two - "...a product named Compass. For" / "premium users of
+            # American Express" - because the pause before naming the users read
+            # as the end of the turn, and an interviewer began over the top of
+            # it. Someone recalling a number or a job title pauses for longer
+            # than half a second, so the panel waits.
+            "endpointing": {"min_delay": 1.1, "max_delay": 3.0},
             # Voice activity rather than the adaptive detector. The adaptive one
             # streams microphone audio to a remote gateway every 100ms, which
             # means another resampler running beside silero's, and soxr aborts
