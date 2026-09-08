@@ -46,9 +46,9 @@
   .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
 
   .eyebrow { font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
-  h1 { font: 400 clamp(32px,5.4vw,52px)/1.08 var(--display); letter-spacing: -.02em; margin: 16px 0 0; text-wrap: balance; }
+  h1 { font: 400 clamp(30px,4.4vw,44px)/1.1 var(--display); letter-spacing: -.02em; margin: 14px 0 0; text-wrap: balance; }
   h1 em { font-style: italic; color: var(--cut); }
-  .lede { font-size: 17.5px; line-height: 1.65; color: var(--ink-2); max-width: 58ch; margin: 18px 0 0; text-wrap: pretty; }
+  .lede { font-size: 16.5px; line-height: 1.6; color: var(--ink-2); max-width: 52ch; margin: 16px 0 0; text-wrap: pretty; }
 
   button {
     font: 500 15px var(--body); padding: 11px 24px; border-radius: 7px;
@@ -68,8 +68,8 @@
     outline: 2px solid var(--mark); outline-offset: 1px; border-color: var(--mark);
   }
   textarea {
-    font: 400 14px/1.5 var(--body); width: 100%; padding: 10px 13px; resize: vertical;
-    min-height: 84px; border: 1px solid var(--rule-2); border-radius: 7px;
+    font: 400 14px/1.5 var(--body); width: 100%; padding: 9px 12px; resize: vertical;
+    min-height: 64px; border: 1px solid var(--rule-2); border-radius: 7px;
     background: var(--sheet); color: var(--ink);
   }
   .privacy { font-size: 12px; color: var(--ink-3); margin-top: 6px; }
@@ -83,18 +83,24 @@
   .dot.on { background: var(--live); box-shadow: 0 0 0 3px var(--live-bg); }
 
   /* ── landing ─────────────────────────────────────────────── */
-  .hero { padding: 56px 0 8px; }
-  .pull { margin: 34px 0 0; padding-left: 20px; border-left: 2px solid var(--cut); }
-  .pull p { margin: 0; font: 400 17px/1.6 var(--display); color: var(--ink-2); max-width: 56ch; }
+  /* Side by side, so the form is above the fold on a 768px laptop. Stacked in
+     one column it sat 94px below it, and nobody scrolls to find Start. */
+  .hero {
+    padding: 40px 0 8px; display: grid; gap: 42px;
+    grid-template-columns: minmax(0, 1fr) 392px; align-items: start;
+  }
+  @media (max-width: 940px) { .hero { grid-template-columns: 1fr; gap: 26px; } }
+  .pull { margin: 26px 0 0; padding-left: 18px; border-left: 2px solid var(--cut); }
+  .pull p { margin: 0; font: 400 16px/1.55 var(--display); color: var(--ink-2); max-width: 52ch; }
   .pull b { color: var(--ink); font-weight: 600; }
-  .gate { margin: 34px 0 0; padding: 22px; background: var(--sheet); border: 1px solid var(--rule);
-          border-radius: 11px; box-shadow: var(--lift); max-width: 520px; }
+  .gate { margin: 0; padding: 20px; background: var(--sheet); border: 1px solid var(--rule);
+          border-radius: 11px; box-shadow: var(--lift); }
   .gate .row { display: flex; gap: 12px; }
   .gate .row > div { flex: 1; }
-  .gate .go { margin-top: 16px; display: flex; align-items: center; gap: 13px; flex-wrap: wrap; }
+  .gate .go { margin-top: 15px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .gate .hint { font-size: 12.5px; color: var(--ink-3); }
-  .gate .err { color: var(--cut); font-size: 13px; margin-top: 11px; min-height: 18px; }
-  .seats { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; margin: 40px 0 0;
+  .gate .err { color: var(--cut); font-size: 13px; margin-top: 10px; min-height: 16px; }
+  .seats { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; margin: 30px 0 0;
            background: var(--rule); border: 1px solid var(--rule); border-radius: 11px; overflow: hidden; }
   @media (max-width: 660px) { .seats { grid-template-columns: 1fr; } }
   .seat { background: var(--sheet); padding: 16px 18px; }
@@ -211,6 +217,7 @@
 
   <section id="landing">
     <div class="hero">
+      <div class="pitch">
       <div class="eyebrow">Panel interview practice</div>
       <h1>You can rehearse questions.<br>You can't rehearse <em>being interrupted</em>.</h1>
       <p class="lede">
@@ -224,6 +231,8 @@
         still running have to be fenced off — or you hear one interviewer's words in
         another's voice, and get assessed on a sentence you never heard.</p>
       </div>
+      </div>
+
       <form class="gate" id="gate" autocomplete="off">
         <div class="row">
           <div><label for="name">Your name</label>
@@ -245,8 +254,9 @@
         </div>
         <div class="err" id="err" role="status" aria-live="polite"></div>
       </form>
-      <div class="seats" id="seats"></div>
     </div>
+
+    <div class="seats" id="seats"></div>
   </section>
 
   <section id="summary" hidden>

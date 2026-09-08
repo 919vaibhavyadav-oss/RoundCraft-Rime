@@ -195,6 +195,17 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def end_headers(self) -> None:
+        """Never let a browser keep the page.
+
+        The static handler sends no cache headers, so a browser holds on to
+        index.html and quietly serves an old copy after every edit. That is
+        confusing during development and dangerous during a demo, where the
+        page on screen would not be the page in the repository.
+        """
+        self.send_header("Cache-Control", "no-store, must-revalidate")
+        super().end_headers()
+
     def log_message(self, fmt: str, *args: object) -> None:
         # The default handler prints every asset request, which buries the one
         # line that matters while recording. Never log the body: it carries the
