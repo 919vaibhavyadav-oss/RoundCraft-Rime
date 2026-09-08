@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RoundCraft</title>
+<script src="https://cdn.jsdelivr.net/npm/livekit-client@2.7.2/dist/livekit-client.umd.min.js"></script>
+<style>
+  :root {
+    --ink: #14161a;
+    --ink-soft: #5b6270;
+    --ground: #f6f5f2;
+    --card: #ffffff;
+    --line: #e3e1dc;
+    --live: #1c6b4a;
+    --dropped: #b23b3b;
+    --accent: #2d4a7c;
+    --shadow: 0 1px 2px rgba(20, 22, 26, .06), 0 8px 24px rgba(20, 22, 26, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #ecebe8; --ink-soft: #9aa1ad; --ground: #16181c; --card: #1e2126;
+      --line: #2c3037; --live: #5fd3a0; --dropped: #f08a8a; --accent: #8fb0e8;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 28px 20px 64px; }
+
+  header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+  h1 { font-size: 21px; letter-spacing: -.01em; margin: 0; font-weight: 650; }
+  .sub { color: var(--ink-soft); font-size: 13.5px; }
+  .status {
+    margin-left: auto; font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-soft); display: flex; align-items: center; gap: 7px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+  .dot.on { background: var(--live); }
+
+  .panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 22px 0; }
+  @media (max-width: 640px) { .panel { grid-template-columns: 1fr; } }
+  .who {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 13px 15px; box-shadow: var(--shadow); transition: border-color .15s, transform .15s;
+  }
+  .who.speaking { border-color: var(--live); transform: translateY(-2px); }
+  .who .name { font-weight: 620; }
+  .who .role { color: var(--ink-soft); font-size: 12.5px; }
+  .who .voice {
+    font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--ink-soft); margin-top: 6px;
+  }
+  .who.speaking .voice { color: var(--live); }
+
+  .rationale {
+    min-height: 22px; font-size: 13px; color: var(--ink-soft);
+    font-style: italic; margin-bottom: 14px;
+  }
+
+  .lookup {
+    display: none; align-items: center; gap: 9px; padding: 9px 13px; margin-bottom: 14px;
+    border: 1px dashed var(--line); border-radius: 8px; font-size: 13.5px; color: var(--ink-soft);
+    background: var(--card);
+  }
+  .lookup.show { display: flex; }
+  .lookup.killed { border-color: var(--dropped); color: var(--dropped); border-style: solid; }
+  .spin {
+    width: 11px; height: 11px; border: 2px solid var(--line); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .8s linear infinite;
+  }
+  .lookup.killed .spin { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+
+  .feed { display: flex; flex-direction: column; gap: 10px; }
+  .turn {
+    background: var(--card); border: 1px solid var(--line); border-left-width: 3px;
+    border-radius: 8px; padding: 11px 14px; box-shadow: var(--shadow);
+  }
+  .turn.candidate { border-left-color: var(--accent); }
+  .turn.panelist { border-left-color: var(--live); }
+  .turn.cut { border-left-color: var(--dropped); }
+  .turn .by {
+    font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-soft); margin-bottom: 4px;
+  }
+  .turn .said { white-space: pre-wrap; }
+  .gone { color: var(--dropped); text-decoration: line-through; opacity: .78; }
+  .cutmark {
+    margin-top: 7px; font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--dropped);
+  }
+  .heardms { font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink-soft); }
+
+  button {
+    font: inherit; font-weight: 560; padding: 9px 20px; border-radius: 8px;
+    border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer;
+  }
+  button:disabled { opacity: .45; cursor: default; }
+  button.ghost { background: transparent; color: var(--accent); }
+  .bar { display: flex; gap: 10px; align-items: center; margin: 18px 0 22px; flex-wrap: wrap; }
+  .hint { color: var(--ink-soft); font-size: 13px; }
+  .empty { color: var(--ink-soft); font-size: 13.5px; padding: 18px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>RoundCraft</h1>
+    <span class="sub">Panel interview practice &middot; every voice is Rime</span>
+    <span class="status"><span class="dot" id="dot"></span><span id="state">offline</span></span>
+  </header>
+
+  <div class="bar">
+    <button id="join">Join the panel</button>
+    <button id="leave" class="ghost" disabled>Leave</button>
+    <span class="hint" id="hint">Your microphone stays open while the panel speaks, so you can cut in.</span>
+  </div>
+
+  <div class="panel" id="panel"></div>
+  <div class="rationale" id="rationale"></div>
+
+  <div class="lookup" id="lookup">
+    <span class="spin"></span><span id="lookuptext"></span>
+  </div>
+
+  <div class="feed" id="feed">
+    <div class="empty" id="empty">Nothing yet. Join, and the hiring manager opens.</div>
+  </div>
+</div>
+
+<script>
+const LK = window.LivekitClient;
+const $ = (id) => document.getElementById(id);
+const feed = $("feed");
+let room = null;
+
+const SEATS = {};
+
+function setState(text, live) {
+  $("state").textContent = text;
+  $("dot").classList.toggle("on", !!live);
+}
+
+function drawPanel(members) {
+  $("panel").innerHTML = "";
+  members.forEach((m) => {
+    const el = document.createElement("div");
+    el.className = "who";
+    el.innerHTML = `<div class="name"></div><div class="role"></div><div class="voice"></div>`;
+    el.querySelector(".name").textContent = m.name;
+    el.querySelector(".role").textContent = m.role;
+    el.querySelector(".voice").textContent = "rime:" + m.voice;
+    $("panel").append(el);
+    SEATS[m.id] = el;
+  });
+}
+
+function speaking(id) {
+  Object.entries(SEATS).forEach(([key, el]) => el.classList.toggle("speaking", key === id));
+}
+
+function nameFor(id) {
+  const el = SEATS[id];
+  return el ? el.querySelector(".name").textContent : id;
+}
+
+function addTurn(kind, by, build) {
+  $("empty")?.remove();
+  const el = document.createElement("div");
+  el.className = "turn " + kind;
+  const who = document.createElement("div");
+  who.className = "by";
+  who.textContent = by;
+  const said = document.createElement("div");
+  said.className = "said";
+  el.append(who, said);
+  build(said, el);
+  feed.append(el);
+  el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  return el;
+}
+
+function showLookup(text, killed) {
+  const box = $("lookup");
+  box.classList.add("show");
+  box.classList.toggle("killed", !!killed);
+  $("lookuptext").textContent = text;
+}
+
+function hideLookup() {
+  $("lookup").classList.remove("show", "killed");
+}
+
+// Every message is written by our own agent, but it still crosses a process
+// boundary, so treat it as data and never as markup.
+function handle(ev) {
+  switch (ev.type) {
+    case "roster":
+      drawPanel(ev.panel);
+      break;
+
+    case "floor":
+      speaking(ev.speaker);
+      $("rationale").textContent = ev.rationale ? "→ " + ev.rationale : "";
+      break;
+
+    case "candidate":
+      addTurn("candidate", "You", (said) => { said.textContent = ev.text; });
+      break;
+
+    case "committed":
+      addTurn("panelist", nameFor(ev.speaker), (said, el) => {
+        said.textContent = ev.text;
+        const ms = document.createElement("div");
+        ms.className = "heardms";
+        ms.textContent = ev.heard_ms + "ms of audio played";
+        el.append(ms);
+      });
+      speaking(null);
+      hideLookup();
+      break;
+
+    // The whole product, on screen: what reached you, and what never did.
+    case "interrupted":
+      addTurn("cut", nameFor(ev.speaker) + " — interrupted", (said, el) => {
+        said.textContent = ev.heard;
+        if (ev.unheard) {
+          const gone = document.createElement("span");
+          gone.className = "gone";
+          gone.textContent = " " + ev.unheard;
+          said.append(gone);
+        }
+        const mark = document.createElement("div");
+        mark.className = "cutmark";
+        mark.textContent = ev.unheard
+          ? `cut at ${ev.at_ms}ms — struck-through words were never spoken`
+          : `cut at ${ev.at_ms}ms — nothing had played yet`;
+        el.append(mark);
+      });
+      speaking(null);
+      break;
+
+    case "lookup_started":
+      showLookup("Checking the benchmark for “" + ev.claim + "”…", false);
+      break;
+
+    case "lookup_returned":
+      showLookup("Benchmark found: " + ev.metric, false);
+      break;
+
+    case "lookup_discarded":
+      showLookup("Lookup discarded — you changed the question while it was running", true);
+      break;
+  }
+}
+
+async function join() {
+  $("join").disabled = true;
+  setState("connecting", false);
+  try {
+    const res = await fetch("/api/join");
+    if (!res.ok) throw new Error(await res.text());
+    const { url, token } = await res.json();
+
+    room = new LK.Room({ adaptiveStream: true, dynacast: true });
+    room.on(LK.RoomEvent.DataReceived, (payload) => {
+      try {
+        handle(JSON.parse(new TextDecoder().decode(payload)));
+      } catch (err) {
+        console.warn("unreadable panel message", err);
+      }
+    });
+    room.on(LK.RoomEvent.TrackSubscribed, (track) => {
+      if (track.kind === LK.Track.Kind.Audio) track.attach();
+    });
+    room.on(LK.RoomEvent.Disconnected, () => {
+      setState("offline", false);
+      $("join").disabled = false;
+      $("leave").disabled = true;
+      speaking(null);
+    });
+
+    await room.connect(url, token);
+    await room.localParticipant.setMicrophoneEnabled(true);
+    setState("live", true);
+    $("leave").disabled = false;
+    $("hint").textContent = "Cut in mid-sentence. The panel will hand over.";
+  } catch (err) {
+    setState("failed", false);
+    $("hint").textContent = "Could not join: " + err.message;
+    $("join").disabled = false;
+  }
+}
+
+// Show the panel before anyone joins, so the page is never a blank shell.
+fetch("/api/panel")
+  .then((r) => r.json())
+  .then((ev) => drawPanel(ev.panel))
+  .catch(() => {});
+
+$("join").addEventListener("click", join);
+$("leave").addEventListener("click", () => room && room.disconnect());
+</script>
+</body>
+</html>

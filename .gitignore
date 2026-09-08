@@ -10,3 +10,4 @@ __pycache__/
 
 # Local run log from the agent worker.
 agent.log
+web_server.log

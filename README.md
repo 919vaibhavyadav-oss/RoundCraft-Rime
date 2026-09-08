@@ -43,6 +43,26 @@ voice. The active provider is therefore unambiguous throughout the demo.
 > Placeholders above are pinned in `app/panel/voices.py` and checked against the
 > live Rime catalogue by `verify_speakers` before each demo recording.
 
+## Running the demo
+
+Two terminals. The agent, which waits for a room:
+
+```bash
+uv run python -m app.agent dev
+```
+
+and the candidate's interface, which serves the page and mints its join token:
+
+```bash
+uv run python scripts/serve_web.py
+```
+
+Then open <http://localhost:8080> and click Join.
+
+The LiveKit API secret stays in the server process. The browser receives only a
+short-lived token scoped to one room, which is what keeps credentials out of
+client code.
+
 ## Architecture
 
 ```
@@ -60,6 +80,13 @@ browser ──WebRTC──> LiveKit ──> Deepgram STT
 
 The floor guard (`app/panel/floor.py`) sits across the whole loop, fencing work
 that belongs to an interrupted turn.
+
+The page is not a passive viewer. The agent broadcasts each decision it makes
+over the LiveKit data channel (`app/panel/events.py`), so an interruption is
+visible as it happens: the words the candidate heard stay, and the words that
+were never spoken appear struck through beside them. The claim this project
+rests on should be watchable by the person it happens to, not reconstructed
+afterwards from a log.
 
 ## Third-party services
 

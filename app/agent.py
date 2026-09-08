@@ -25,6 +25,7 @@ build.
 """
 
 import asyncio
+import json
 import logging
 from typing import TYPE_CHECKING, cast
 
@@ -59,7 +60,7 @@ from app.config import get_settings  # noqa: E402
 
 if TYPE_CHECKING:
     from openai.types import ReasoningEffort
-from app.panel import director  # noqa: E402
+from app.panel import director, events  # noqa: E402
 from app.panel.benchmarks import find_benchmark  # noqa: E402
 from app.panel.floor import WordTimeline  # noqa: E402
 from app.panel.roster import PANEL, opening_line  # noqa: E402
@@ -96,6 +97,21 @@ class PanelAgent(Agent):
     def __init__(self) -> None:
         super().__init__(instructions=SYSTEM_PROMPT)
         self.interview = InterviewSession()
+        # Set once the job starts. The interview does not depend on it: if the
+        # browser is not listening, or publishing fails, nothing here changes.
+        self.room: object | None = None
+
+    def announce(self, event: dict[str, object]) -> None:
+        """Tell the room what the panel just did, without ever blocking it."""
+        room = self.room
+        publish = getattr(getattr(room, "local_participant", None), "publish_data", None)
+        if publish is None:
+            return
+        task = asyncio.create_task(
+            publish(json.dumps(event), topic=events.TOPIC, reliable=True)
+        )
+        # A dropped frame in the UI must never surface as a failed interview.
+        task.add_done_callback(lambda t: t.exception() if not t.cancelled() else None)
 
     # -- opening -------------------------------------------------------------
 
@@ -118,6 +134,15 @@ class PanelAgent(Agent):
             "floor -> %s (gen %s): opening",
             decision.speaker.name,
             self.interview.generation,
+        )
+        self.announce(events.roster())
+        self.announce(
+            events.floor_taken(
+                decision.speaker.id,
+                decision.speaker.name,
+                self.interview.generation,
+                decision.rationale,
+            )
         )
         self.session.say(opening_line())
 
@@ -147,6 +172,15 @@ class PanelAgent(Agent):
             decision.speaker.name,
             self.interview.generation,
             decision.rationale,
+        )
+        self.announce(events.candidate_said(answer))
+        self.announce(
+            events.floor_taken(
+                decision.speaker.id,
+                decision.speaker.name,
+                self.interview.generation,
+                decision.rationale,
+            )
         )
         # The system prompt establishes the panel; this establishes which member
         # of it is speaking right now. It is added per turn rather than kept in
@@ -192,6 +226,7 @@ class PanelAgent(Agent):
         # happens to be running by the time it returns.
         generation = self.interview.generation
         logger.info("lookup started for %r at gen %s", claim, generation)
+        self.announce(events.lookup_started(claim, generation))
 
         # A fixed delay, as the brief's proof procedure requires, so there is a
         # real window in which the candidate can cut across work in flight.
@@ -202,6 +237,7 @@ class PanelAgent(Agent):
             # question they abandoned, so it must not be spoken as current, and
             # must not reach the model as context either.
             logger.info("discarded stale lookup of %r from gen %s", claim, generation)
+            self.announce(events.lookup_discarded(claim, generation))
             raise StopResponse
 
         benchmark = find_benchmark(claim)
@@ -212,6 +248,7 @@ class PanelAgent(Agent):
                 "how they measured it instead of quoting a number."
             )
         logger.info("lookup returned %s for gen %s", benchmark.metric, generation)
+        self.announce(events.lookup_returned(benchmark.metric, generation))
         return benchmark.spoken()
 
     # -- committing a turn ---------------------------------------------------
@@ -243,7 +280,14 @@ class PanelAgent(Agent):
             ).strip()
             heard_ms = self.interview.heard_ms()
             if spoken and self.interview.interviewer_finished(generation, spoken):
-                logger.info("committed gen %s after %sms of audio: %s", generation, heard_ms, spoken)
+                logger.info(
+                    "committed gen %s after %sms of audio: %s", generation, heard_ms, spoken
+                )
+                self.announce(
+                    events.turn_committed(
+                        self.interview.transcript[-1].speaker_id, generation, spoken, heard_ms
+                    )
+                )
                 if heard_ms == 0:
                     # Rime reported no word timings, so an interruption during
                     # this turn could not have been placed. Worth knowing.
@@ -272,6 +316,7 @@ class PanelAgent(Agent):
             cut.heard,
             cut.unheard,
         )
+        self.announce(events.turn_interrupted(cut))
 
     def _switch_voice(self, panelist_id: str) -> None:
         """Point Rime at this interviewer's voice for the turn about to be spoken.
@@ -348,6 +393,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
         )
 
     agent = PanelAgent()
+    agent.room = ctx.room
     session = build_session()
     session.on("speech_created", agent.watch_speech)
 
