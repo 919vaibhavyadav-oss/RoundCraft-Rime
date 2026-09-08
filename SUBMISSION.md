@@ -6,16 +6,16 @@
 | | |
 | --- | --- |
 | Live application | https://roundcraft-rime-web.onrender.com |
-| Access code | `REPLACE_ME_BEFORE_SUBMITTING` — see note below |
+| Access code | `panel-2026` |
 | Source repository | https://github.com/919vaibhavyadav-oss/RoundCraft-Rime |
 | Demo recording | `Video Project 1.mp4`, included in this archive |
 | Evidence | [RIME_EVIDENCE.md](RIME_EVIDENCE.md) |
 | Setup and architecture | [README.md](README.md) |
 
 > **The access code gates the endpoint that starts an interview**, because
-> starting one spends real credit at Rime, Deepgram and the model provider. Put
-> the code you set on the web service into the table above before submitting, so
-> judges can open the live application.
+> starting one spends real credit at Rime, Deepgram and the model provider. It is
+> published here so judges can open the live application, and it is a gate rather
+> than a secret: it protects a quota, not any data.
 
 ---
 

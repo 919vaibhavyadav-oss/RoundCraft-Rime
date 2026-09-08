@@ -43,6 +43,18 @@ voice. The active provider is therefore unambiguous throughout the demo.
 > Placeholders above are pinned in `app/panel/voices.py` and checked against the
 > live Rime catalogue by `verify_speakers` before each demo recording.
 
+## Try it
+
+| | |
+| --- | --- |
+| Live application | <https://roundcraft-rime-web.onrender.com> |
+| Access code | `panel-2026` |
+
+The code gates the one endpoint that starts an interview, because starting one
+spends real credit at Rime, Deepgram and the model provider. It is a quota gate
+rather than a secret, which is why it can be written down here; no data sits
+behind it, and the server refuses to serve a public instance without one.
+
 ## Running the demo
 
 Two terminals. The agent, which waits for a room:
