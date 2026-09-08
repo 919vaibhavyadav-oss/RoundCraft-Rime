@@ -7,214 +7,258 @@
 <meta name="description" content="Practise the interview you can't rehearse: a panel that interrupts, hands off, and follows up on your numbers.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/livekit-client@2.7.2/dist/livekit-client.umd.min.js"></script>
 <style>
   :root {
-    --ink: #191a17;
-    --ink-2: #55574f;
-    --ink-3: #8b8d84;
-    --ground: #faf9f5;
-    --card: #ffffff;
-    --line: #e2e0d7;
-    --line-2: #cfccc0;
-    --live: #2f6b47;
-    --live-soft: #e8f2eb;
-    --cut: #a8402f;
-    --cut-soft: #fbeceA;
-    --accent: #2c4a6e;
-    --display: "Fraunces", Georgia, serif;
+    --paper: #f7f5f0;
+    --sheet: #fffefb;
+    --ink: #1a1917;
+    --ink-2: #57544d;
+    --ink-3: #8d8980;
+    --rule: #e0dcd2;
+    --rule-2: #c9c4b6;
+    --live: #2c6249;
+    --live-bg: #e9f1ec;
+    --cut: #9e3b28;
+    --cut-bg: #fbeeea;
+    --mark: #b8873a;
+    --display: "Newsreader", Georgia, "Times New Roman", serif;
     --body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-    --shadow: 0 1px 2px rgba(25,26,23,.05), 0 10px 30px rgba(25,26,23,.05);
+    --lift: 0 1px 2px rgba(26,25,23,.04), 0 12px 32px rgba(26,25,23,.05);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --ink: #ecebe5; --ink-2: #a8aaa0; --ink-3: #7d7f76;
-      --ground: #14151a; --card: #1c1e24; --line: #2b2e36; --line-2: #3a3e48;
-      --live: #6fcf97; --live-soft: #1a2b22; --cut: #e88b7a; --cut-soft: #2c1d1a;
-      --accent: #8fb2dd;
-      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.25);
+      --paper: #131418; --sheet: #1b1d22; --ink: #eeece6; --ink-2: #a6a49b;
+      --ink-3: #7a7871; --rule: #2a2d34; --rule-2: #3b3f48;
+      --live: #74cf9c; --live-bg: #17281f; --cut: #e0806b; --cut-bg: #2a1a16;
+      --mark: #d3a75e;
+      --lift: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.28);
     }
   }
   :root[data-theme="dark"] {
-    --ink: #ecebe5; --ink-2: #a8aaa0; --ink-3: #7d7f76;
-    --ground: #14151a; --card: #1c1e24; --line: #2b2e36; --line-2: #3a3e48;
-    --live: #6fcf97; --live-soft: #1a2b22; --cut: #e88b7a; --cut-soft: #2c1d1a;
-    --accent: #8fb2dd;
-    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.25);
+    --paper: #131418; --sheet: #1b1d22; --ink: #eeece6; --ink-2: #a6a49b;
+    --ink-3: #7a7871; --rule: #2a2d34; --rule-2: #3b3f48;
+    --live: #74cf9c; --live-bg: #17281f; --cut: #e0806b; --cut-bg: #2a1a16;
+    --mark: #d3a75e;
+    --lift: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.28);
   }
 
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
-    margin: 0; background: var(--ground); color: var(--ink);
-    font: 15.5px/1.6 var(--body);
-    -webkit-font-smoothing: antialiased;
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 400 15.5px/1.62 var(--body);
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
   }
-  .wrap { max-width: 900px; margin: 0 auto; padding: 0 22px 72px; }
   [hidden] { display: none !important; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
 
-  /* --- shared ------------------------------------------------------- */
+  /* ── type ─────────────────────────────────────────────────────── */
   .eyebrow {
-    font: 500 11.5px/1 var(--mono); letter-spacing: .11em; text-transform: uppercase;
-    color: var(--ink-3);
+    font: 500 11px/1 var(--mono); letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-3);
   }
-  h1 { font: 600 clamp(30px, 5vw, 44px)/1.1 var(--display); margin: 14px 0 0; letter-spacing: -.015em; text-wrap: balance; }
-  h2 { font: 600 21px/1.25 var(--display); margin: 0 0 4px; letter-spacing: -.01em; }
-  .lede { font-size: 17px; color: var(--ink-2); max-width: 60ch; margin: 14px 0 0; text-wrap: pretty; }
-  button {
-    font: 600 15px var(--body); padding: 11px 22px; border-radius: 8px;
-    border: 1px solid var(--accent); background: var(--accent); color: var(--ground);
-    cursor: pointer; transition: opacity .15s;
+  h1 {
+    font: 400 clamp(32px, 5.4vw, 52px)/1.08 var(--display);
+    letter-spacing: -.02em; margin: 16px 0 0; text-wrap: balance;
   }
-  button:hover:not(:disabled) { opacity: .88; }
-  button:disabled { opacity: .4; cursor: default; }
-  button.ghost { background: transparent; color: var(--accent); }
-  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  h1 em { font-style: italic; color: var(--cut); }
+  h2 { font: 500 20px/1.3 var(--display); margin: 0; letter-spacing: -.01em; }
+  .lede {
+    font-size: 17.5px; line-height: 1.65; color: var(--ink-2);
+    max-width: 58ch; margin: 18px 0 0; text-wrap: pretty;
+  }
 
-  /* --- topbar ------------------------------------------------------- */
+  /* ── controls ─────────────────────────────────────────────────── */
+  button {
+    font: 500 15px var(--body); padding: 11px 24px; border-radius: 7px;
+    border: 1px solid var(--ink); background: var(--ink); color: var(--paper);
+    cursor: pointer; transition: opacity .15s; white-space: nowrap;
+  }
+  button:hover:not(:disabled) { opacity: .84; }
+  button:disabled { opacity: .38; cursor: default; }
+  button.ghost { background: transparent; color: var(--ink-2); border-color: var(--rule-2); }
+  button:focus-visible { outline: 2px solid var(--mark); outline-offset: 3px; }
+  label { display: block; font: 500 12.5px var(--body); color: var(--ink-2); margin-bottom: 6px; }
+  input {
+    font: 400 15px var(--body); width: 100%; padding: 10px 13px;
+    border: 1px solid var(--rule-2); border-radius: 7px;
+    background: var(--sheet); color: var(--ink);
+  }
+  input:focus-visible { outline: 2px solid var(--mark); outline-offset: 1px; border-color: var(--mark); }
+
+  /* ── topbar ───────────────────────────────────────────────────── */
   .top {
     display: flex; align-items: center; gap: 12px;
-    padding: 20px 0 0; border-bottom: 1px solid var(--line); padding-bottom: 16px;
+    padding: 22px 0 16px; border-bottom: 1px solid var(--rule);
   }
-  .brand { font: 600 17px var(--display); letter-spacing: -.01em; }
-  .brand span { color: var(--ink-3); font: 400 13px var(--body); margin-left: 9px; }
+  .brand { font: 500 18px var(--display); letter-spacing: -.01em; }
+  .brand b { font-weight: 600; }
+  .brand span {
+    display: block; font: 400 11px/1 var(--mono); letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-3); margin-top: 4px;
+  }
   .status { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-  .status .eyebrow { color: var(--ink-3); }
-  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line-2); }
-  .dot.on { background: var(--live); box-shadow: 0 0 0 3px var(--live-soft); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--rule-2); flex: none; }
+  .dot.on { background: var(--live); box-shadow: 0 0 0 3px var(--live-bg); }
 
-  /* --- landing ------------------------------------------------------ */
-  .hero { padding: 54px 0 40px; }
-  .claim {
-    margin: 30px 0 0; padding: 18px 20px; border-left: 3px solid var(--cut);
-    background: var(--card); border-radius: 0 9px 9px 0; box-shadow: var(--shadow);
+  /* ── landing ──────────────────────────────────────────────────── */
+  .hero { padding: 56px 0 8px; }
+  .pull {
+    margin: 34px 0 0; padding-left: 20px; border-left: 2px solid var(--cut);
   }
-  .claim p { margin: 0; color: var(--ink-2); }
-  .claim strong { color: var(--ink); font-weight: 600; }
-  .start { margin-top: 30px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-  .start .note { font-size: 13.5px; color: var(--ink-3); }
+  .pull p { margin: 0; font: 400 17px/1.6 var(--display); color: var(--ink-2); max-width: 56ch; }
+  .pull b { color: var(--ink); font-weight: 600; }
 
-  /* --- panel -------------------------------------------------------- */
-  .panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 26px 0 0; }
-  @media (max-width: 660px) { .panel { grid-template-columns: 1fr; } }
-  .who {
-    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-    padding: 14px 16px; box-shadow: var(--shadow);
-    transition: border-color .18s, box-shadow .18s;
+  .gate {
+    margin: 34px 0 0; padding: 22px; background: var(--sheet);
+    border: 1px solid var(--rule); border-radius: 11px; box-shadow: var(--lift);
+    max-width: 520px;
   }
-  .who.speaking { border-color: var(--live); box-shadow: 0 0 0 3px var(--live-soft), var(--shadow); }
-  .who .name { font-weight: 600; }
-  .who .role { color: var(--ink-2); font-size: 13px; }
-  .who .voice { font: 500 11.5px var(--mono); color: var(--ink-3); margin-top: 8px; }
-  .who.speaking .voice { color: var(--live); }
+  .gate .row { display: flex; gap: 12px; }
+  .gate .row > div { flex: 1; }
+  .gate .go { margin-top: 16px; display: flex; align-items: center; gap: 13px; flex-wrap: wrap; }
+  .gate .hint { font-size: 12.5px; color: var(--ink-3); }
+  .gate .err { color: var(--cut); font-size: 13px; margin-top: 11px; min-height: 18px; }
 
-  /* --- room --------------------------------------------------------- */
-  .why {
-    min-height: 24px; font-size: 13.5px; color: var(--ink-2); font-style: italic;
-    margin: 14px 0 0;
+  /* ── the seats ────────────────────────────────────────────────── */
+  .seats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 40px 0 0;
+           background: var(--rule); border: 1px solid var(--rule); border-radius: 11px; overflow: hidden; }
+  @media (max-width: 660px) { .seats { grid-template-columns: 1fr; } }
+  .seat {
+    background: var(--sheet); padding: 16px 18px;
+    transition: background .2s, box-shadow .2s;
   }
+  .seat.speaking { background: var(--live-bg); box-shadow: inset 3px 0 0 var(--live); }
+  .seat .n { font: 500 15.5px var(--display); }
+  .seat .r { font-size: 12.5px; color: var(--ink-2); margin-top: 1px; }
+  .seat .v { font: 400 11px var(--mono); color: var(--ink-3); margin-top: 9px; letter-spacing: .04em; }
+  .seat.speaking .v { color: var(--live); }
+
+  /* ── room ─────────────────────────────────────────────────────── */
+  .why { min-height: 22px; margin: 16px 0 0; font-size: 13.5px; color: var(--ink-2); }
+  .why b { color: var(--ink); font-weight: 500; }
   .lookup {
-    display: none; align-items: center; gap: 10px; margin-top: 14px;
-    padding: 10px 14px; border: 1px dashed var(--line-2); border-radius: 8px;
-    background: var(--card); font-size: 13.5px; color: var(--ink-2);
+    display: none; align-items: center; gap: 11px; margin-top: 14px;
+    padding: 11px 15px; border-radius: 8px; font-size: 13.5px;
+    border: 1px dashed var(--rule-2); background: var(--sheet); color: var(--ink-2);
   }
   .lookup.show { display: flex; }
-  .lookup.killed { border-style: solid; border-color: var(--cut); background: var(--cut-soft); color: var(--cut); }
-  .spin {
-    width: 11px; height: 11px; border: 2px solid var(--line-2); border-top-color: var(--accent);
-    border-radius: 50%; animation: spin .8s linear infinite; flex: none;
-  }
-  .lookup.killed .spin { display: none; }
+  .lookup.dead { border-style: solid; border-color: var(--cut); background: var(--cut-bg); color: var(--cut); }
+  .spin { width: 11px; height: 11px; flex: none; border: 2px solid var(--rule-2);
+          border-top-color: var(--mark); border-radius: 50%; animation: spin .75s linear infinite; }
+  .lookup.dead .spin { display: none; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
 
-  .feed { display: flex; flex-direction: column; gap: 11px; margin-top: 22px; }
+  /* ── transcript ───────────────────────────────────────────────── */
+  .feed { margin-top: 26px; border-top: 1px solid var(--rule); }
   .turn {
-    background: var(--card); border: 1px solid var(--line); border-left-width: 3px;
-    border-radius: 9px; padding: 12px 15px; box-shadow: var(--shadow);
+    display: grid; grid-template-columns: 78px 1fr; gap: 18px;
+    padding: 16px 0; border-bottom: 1px solid var(--rule);
   }
-  .turn.you { border-left-color: var(--accent); }
-  .turn.said { border-left-color: var(--live); }
-  .turn.cut { border-left-color: var(--cut); background: var(--cut-soft); }
-  .turn .by { font: 500 11.5px var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
+  @media (max-width: 560px) { .turn { grid-template-columns: 1fr; gap: 6px; } }
+  .turn .side { font: 400 11px/1.5 var(--mono); color: var(--ink-3); letter-spacing: .04em; }
+  .turn .who { font: 500 12.5px var(--body); color: var(--ink-2); margin-bottom: 4px; }
   .turn .text { white-space: pre-wrap; }
-  .gone { color: var(--cut); text-decoration: line-through; text-decoration-thickness: 1.5px; opacity: .8; }
-  .meta { margin-top: 8px; font: 400 11.5px var(--mono); color: var(--ink-3); }
-  .meta.cutline { color: var(--cut); }
-  .empty { color: var(--ink-3); font-size: 14px; padding: 22px 0; }
+  .turn.you .who { color: var(--ink); }
+  .turn.you .text { color: var(--ink-2); }
+  .turn.cut { background: var(--cut-bg); margin: 0 -14px; padding: 16px 14px; border-radius: 8px; }
+  .turn.cut .who { color: var(--cut); }
+  .gone { color: var(--cut); text-decoration: line-through; text-decoration-thickness: 1.5px; opacity: .82; }
+  .stamp { margin-top: 9px; font: 400 11.5px var(--mono); color: var(--ink-3); }
+  .stamp.cutline { color: var(--cut); }
+  .empty { padding: 30px 0; color: var(--ink-3); font-size: 14px; }
 
-  /* --- summary ------------------------------------------------------ */
-  .tally { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 22px 0; }
-  @media (max-width: 660px) { .tally { grid-template-columns: 1fr; } }
-  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow); }
-  .stat .n { font: 600 25px/1 var(--display); font-variant-numeric: tabular-nums; }
-  .stat .l { font-size: 13px; color: var(--ink-2); margin-top: 5px; }
-  .note {
-    margin: 20px 0 0; padding: 15px 18px; border: 1px solid var(--line);
-    border-radius: 9px; background: var(--card); color: var(--ink-2); font-size: 14.5px;
+  /* ── summary ──────────────────────────────────────────────────── */
+  .tally { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 26px 0 0;
+           background: var(--rule); border: 1px solid var(--rule); border-radius: 11px; overflow: hidden; }
+  @media (max-width: 560px) { .tally { grid-template-columns: 1fr; } }
+  .stat { background: var(--sheet); padding: 17px 19px; }
+  .stat .n { font: 400 28px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .stat .l { font-size: 12.5px; color: var(--ink-2); margin-top: 6px; }
+  .verdict {
+    margin: 22px 0 0; padding: 18px 20px; border-radius: 10px;
+    background: var(--sheet); border: 1px solid var(--rule); color: var(--ink-2);
+    font-size: 15px; box-shadow: var(--lift);
   }
-  .note strong { color: var(--ink); }
+  .verdict b { color: var(--ink); font-weight: 600; }
+  .actions { margin-top: 26px; display: flex; gap: 11px; flex-wrap: wrap; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <div class="top">
-    <div class="brand">RoundCraft <span>every voice is Rime</span></div>
+    <div class="brand"><b>RoundCraft</b><span>every voice is Rime</span></div>
     <div class="status"><span class="dot" id="dot"></span><span class="eyebrow" id="state">not started</span></div>
   </div>
 
-  <!-- ------------------------------------------------ landing -->
+  <!-- ─────────────────────────────────────────────── landing -->
   <section id="landing">
     <div class="hero">
       <div class="eyebrow">Panel interview practice</div>
-      <h1>You can rehearse questions.<br>You can't rehearse a panel.</h1>
+      <h1>You can rehearse questions.<br>You can't rehearse <em>being interrupted</em>.</h1>
       <p class="lede">
         Three interviewers share one room. They hand off to each other, follow up on the
-        number you just said, and keep talking when you talk over them. Each one speaks
-        in their own Rime voice, switched per turn on a single connection.
+        number you just said, and keep going when you talk over them — each in their own
+        Rime voice, switched per turn on a single connection.
       </p>
 
-      <div class="claim">
-        <p><strong>The hard part isn't stopping the audio.</strong> When you cut across one
-        interviewer, a different one takes over — so the half-finished sentence, and any
-        lookup still running, must be fenced off. Otherwise you hear one interviewer's
-        words in another's voice, and get scored on a sentence you never heard.</p>
+      <div class="pull">
+        <p><b>The hard part isn't stopping the audio.</b> When you cut across one
+        interviewer, a different one takes over. The half-finished sentence and any
+        lookup still running have to be fenced off — or you hear one interviewer's words
+        in another's voice, and get assessed on a sentence you never heard.</p>
       </div>
 
-      <div class="start">
-        <button id="begin">Start the interview</button>
-        <span class="note">Uses your microphone. Interrupt whenever you like — that's the point.</span>
-      </div>
+      <form class="gate" id="gate" autocomplete="off">
+        <div class="row">
+          <div>
+            <label for="name">Your name</label>
+            <input id="name" name="name" placeholder="Vaibhav" maxlength="40" autocomplete="name">
+          </div>
+          <div id="codewrap" hidden>
+            <label for="code">Access code</label>
+            <input id="code" name="code" placeholder="••••••" maxlength="64" autocomplete="off" inputmode="text">
+          </div>
+        </div>
+        <div class="go">
+          <button type="submit" id="begin">Start the interview</button>
+          <span class="hint">Uses your microphone. Interrupt whenever you like.</span>
+        </div>
+        <div class="err" id="err" role="status" aria-live="polite"></div>
+      </form>
 
-      <div class="panel" id="panel-landing"></div>
+      <div class="seats" id="seats-landing"></div>
     </div>
   </section>
 
-  <!-- ------------------------------------------------ room -->
+  <!-- ─────────────────────────────────────────────── room -->
   <section id="room" hidden>
-    <div class="panel" id="panel-room"></div>
+    <div class="seats" id="seats-room"></div>
     <div class="why" id="why"></div>
     <div class="lookup" id="lookup"><span class="spin"></span><span id="lookuptext"></span></div>
-    <div class="feed" id="feed"><div class="empty" id="empty">Waiting for the panel…</div></div>
-    <div class="start"><button id="finish" class="ghost">End the interview</button></div>
+    <div class="feed" id="feed"><div class="empty" id="empty">Waiting for the panel to open…</div></div>
+    <div class="actions"><button id="finish" class="ghost">End the interview</button></div>
   </section>
 
-  <!-- ------------------------------------------------ summary -->
+  <!-- ─────────────────────────────────────────────── summary -->
   <section id="summary" hidden>
     <div class="hero" style="padding-bottom:0">
       <div class="eyebrow">Session record</div>
-      <h1 style="font-size:clamp(26px,4vw,34px)">What the panel actually heard</h1>
+      <h1 style="font-size:clamp(27px,4vw,38px)">What the panel actually heard</h1>
       <p class="lede">
-        Only the words that reached you are recorded here. Anything an interviewer began
-        and you cut off is shown struck through, and is not part of the transcript.
+        Only words that reached you are recorded. Anything an interviewer began and you
+        cut off is struck through, and forms no part of the transcript.
       </p>
     </div>
     <div class="tally" id="tally"></div>
-    <div class="note" id="verdict"></div>
+    <div class="verdict" id="verdict"></div>
     <div class="feed" id="record"></div>
-    <div class="start"><button id="again">Start another</button></div>
+    <div class="actions"><button id="again">Start another</button></div>
   </section>
 
 </div>
@@ -222,117 +266,126 @@
 <script>
 const LK = window.LivekitClient;
 const $ = (id) => document.getElementById(id);
-let room = null;
-const SEATS = {};          // panelist id -> the two cards for them
-const NAMES = {};
-let history = [];          // every turn, for the summary
-let interruptions = 0;
+let room = null, history = [], interruptions = 0;
+const SEATS = {}, NAMES = {};
 
-function show(stage) {
+const show = (stage) => {
   ["landing", "room", "summary"].forEach((s) => { $(s).hidden = s !== stage; });
   window.scrollTo({ top: 0 });
-}
-
-function setState(text, live) {
+};
+const setState = (text, live) => {
   $("state").textContent = text;
   $("dot").classList.toggle("on", !!live);
-}
+};
 
-function card(m) {
+function seat(m) {
   const el = document.createElement("div");
-  el.className = "who";
-  el.innerHTML = '<div class="name"></div><div class="role"></div><div class="voice"></div>';
-  el.querySelector(".name").textContent = m.name;
-  el.querySelector(".role").textContent = m.role;
-  el.querySelector(".voice").textContent = "rime · " + m.voice;
+  el.className = "seat";
+  el.innerHTML = '<div class="n"></div><div class="r"></div><div class="v"></div>';
+  el.querySelector(".n").textContent = m.name;
+  el.querySelector(".r").textContent = m.role;
+  el.querySelector(".v").textContent = "rime · " + m.voice;
   return el;
 }
 
-function drawPanel(members) {
-  ["panel-landing", "panel-room"].forEach((id) => { $(id).innerHTML = ""; });
+function drawSeats(members) {
+  ["seats-landing", "seats-room"].forEach((id) => { $(id).innerHTML = ""; });
   members.forEach((m) => {
     NAMES[m.id] = m.name;
-    SEATS[m.id] = ["panel-landing", "panel-room"].map((id) => {
-      const el = card(m);
+    SEATS[m.id] = ["seats-landing", "seats-room"].map((id) => {
+      const el = seat(m);
       $(id).append(el);
       return el;
     });
   });
 }
 
-function speaking(id) {
-  Object.entries(SEATS).forEach(([key, els]) =>
-    els.forEach((el) => el.classList.toggle("speaking", key === id))
-  );
-}
+const speaking = (id) =>
+  Object.entries(SEATS).forEach(([k, els]) =>
+    els.forEach((el) => el.classList.toggle("speaking", k === id)));
 
 const nameFor = (id) => NAMES[id] || id;
+const clock = (n) => {
+  const s = Math.floor(n / 1000);
+  return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+};
 
-// Content always goes in as text, never as markup: it crosses a process boundary.
-function renderTurn(into, turn) {
+// Everything below goes in as text, never markup: it crosses a process boundary.
+function renderTurn(into, t) {
   const el = document.createElement("div");
-  el.className = "turn " + turn.kind;
-  const by = document.createElement("div");
-  by.className = "by";
-  by.textContent = turn.by;
+  el.className = "turn " + t.kind;
+
+  const side = document.createElement("div");
+  side.className = "side";
+  side.textContent = t.side || "";
+
+  const main = document.createElement("div");
+  const who = document.createElement("div");
+  who.className = "who";
+  who.textContent = t.by;
   const text = document.createElement("div");
   text.className = "text";
-  text.textContent = turn.heard;
-  if (turn.dropped) {
+  text.textContent = t.heard;
+  if (t.dropped) {
     const gone = document.createElement("span");
     gone.className = "gone";
-    gone.textContent = " " + turn.dropped;
+    gone.textContent = " " + t.dropped;
     text.append(gone);
   }
-  el.append(by, text);
-  if (turn.meta) {
-    const meta = document.createElement("div");
-    meta.className = "meta" + (turn.kind === "cut" ? " cutline" : "");
-    meta.textContent = turn.meta;
-    el.append(meta);
+  main.append(who, text);
+  if (t.stamp) {
+    const s = document.createElement("div");
+    s.className = "stamp" + (t.kind === "cut" ? " cutline" : "");
+    s.textContent = t.stamp;
+    main.append(s);
   }
+  el.append(side, main);
   into.append(el);
   return el;
 }
 
-function addTurn(turn) {
+function addTurn(t) {
   $("empty")?.remove();
-  history.push(turn);
-  renderTurn($("feed"), turn).scrollIntoView({ block: "nearest", behavior: "smooth" });
+  history.push(t);
+  renderTurn($("feed"), t).scrollIntoView({ block: "nearest", behavior: "smooth" });
 }
 
-function lookup(text, killed) {
+const lookup = (text, dead) => {
   $("lookup").classList.add("show");
-  $("lookup").classList.toggle("killed", !!killed);
+  $("lookup").classList.toggle("dead", !!dead);
   $("lookuptext").textContent = text;
-}
+};
 
 function handle(ev) {
   switch (ev.type) {
     case "roster":
-      drawPanel(ev.panel);
+      drawSeats(ev.panel);
       break;
-    case "floor":
+    case "floor": {
       speaking(ev.speaker);
-      $("why").textContent = ev.rationale ? "The panel chose " + ev.name + " — " + ev.rationale : "";
+      $("why").innerHTML = "";
+      const b = document.createElement("b");
+      b.textContent = ev.name;
+      $("why").append("The panel chose ", b, ev.rationale ? " — " + ev.rationale : "");
       break;
+    }
     case "candidate":
-      addTurn({ kind: "you", by: "You", heard: ev.text });
+      addTurn({ kind: "you", by: "You", heard: ev.text, side: "answer" });
       break;
     case "committed":
       addTurn({
         kind: "said", by: nameFor(ev.speaker), heard: ev.text,
-        meta: ev.heard_ms + " ms of audio played",
+        side: clock(ev.heard_ms), stamp: ev.heard_ms + " ms of audio played",
       });
       speaking(null);
-      $("lookup").classList.remove("show", "killed");
+      $("lookup").classList.remove("show", "dead");
       break;
     case "interrupted":
       interruptions += 1;
       addTurn({
-        kind: "cut", by: nameFor(ev.speaker) + " · interrupted",
-        heard: ev.heard, dropped: ev.unheard,
-        meta: ev.unheard
+        kind: "cut", by: nameFor(ev.speaker) + " · cut off",
+        heard: ev.heard, dropped: ev.unheard, side: clock(ev.at_ms),
+        stamp: ev.unheard
           ? "cut at " + ev.at_ms + " ms — struck-through words were never spoken"
           : "cut at " + ev.at_ms + " ms — nothing had played yet",
       });
@@ -350,21 +403,27 @@ function handle(ev) {
   }
 }
 
-async function begin() {
+async function begin(e) {
+  e.preventDefault();
   $("begin").disabled = true;
+  $("err").textContent = "";
   setState("connecting", false);
   try {
-    const res = await fetch("/api/join");
-    if (!res.ok) throw new Error(await res.text());
-    const { url, token } = await res.json();
+    // POST, so the access code never lands in a URL that proxies would log.
+    const res = await fetch("/api/join", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: $("name").value, code: $("code").value }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Could not start the interview.");
 
-    history = [];
-    interruptions = 0;
-    $("feed").innerHTML = '<div class="empty" id="empty">Waiting for the panel…</div>';
+    history = []; interruptions = 0;
+    $("feed").innerHTML = '<div class="empty" id="empty">Waiting for the panel to open…</div>';
 
     room = new LK.Room({ adaptiveStream: true, dynacast: true });
-    room.on(LK.RoomEvent.DataReceived, (payload) => {
-      try { handle(JSON.parse(new TextDecoder().decode(payload))); }
+    room.on(LK.RoomEvent.DataReceived, (p) => {
+      try { handle(JSON.parse(new TextDecoder().decode(p))); }
       catch (err) { console.warn("unreadable panel message", err); }
     });
     room.on(LK.RoomEvent.TrackSubscribed, (t) => {
@@ -372,14 +431,14 @@ async function begin() {
     });
     room.on(LK.RoomEvent.Disconnected, () => finish());
 
-    await room.connect(url, token);
+    await room.connect(data.url, data.token);
     await room.localParticipant.setMicrophoneEnabled(true);
     setState("live", true);
     show("room");
   } catch (err) {
-    setState("could not connect", false);
+    setState("not started", false);
+    $("err").textContent = err.message;
     $("begin").disabled = false;
-    alert("Could not start: " + err.message);
   }
 }
 
@@ -393,7 +452,7 @@ function finish() {
   const yours = history.filter((t) => t.kind === "you").length;
   $("tally").innerHTML = "";
   [[asked, "questions the panel asked"],
-   [yours, "answers you gave"],
+   [yours, yours === 1 ? "answer you gave" : "answers you gave"],
    [interruptions, interruptions === 1 ? "time you cut in" : "times you cut in"]
   ].forEach(([n, label]) => {
     const el = document.createElement("div");
@@ -406,24 +465,24 @@ function finish() {
 
   const cuts = history.filter((t) => t.kind === "cut" && t.dropped);
   $("verdict").innerHTML = "";
-  const strong = document.createElement("strong");
-  const rest = document.createTextNode(
-    cuts.length
-      ? " Those words were generated and never played, so they are not in the transcript above. Nothing you did not hear can be used as evidence about you."
-      : " Nothing was cut off this time. Try interrupting an interviewer mid-sentence and the dropped half will appear here."
-  );
-  strong.textContent = cuts.length
-    ? `You cut across an interviewer ${cuts.length === 1 ? "once" : cuts.length + " times"}.`
+  const b = document.createElement("b");
+  b.textContent = cuts.length
+    ? "You cut across an interviewer " + (cuts.length === 1 ? "once." : cuts.length + " times.")
     : "No interruptions this session.";
-  $("verdict").append(strong, rest);
+  $("verdict").append(b, document.createTextNode(cuts.length
+    ? " Those words were generated and never played, so they are not part of the transcript above. Nothing you did not hear can be used as evidence about you."
+    : " Try interrupting an interviewer mid-sentence — the half they never got to say will appear here, struck through."));
 
   $("record").innerHTML = "";
-  if (history.length) history.forEach((t) => renderTurn($("record"), t));
+  history.forEach((t) => renderTurn($("record"), t));
   show("summary");
 }
 
-fetch("/api/panel").then((r) => r.json()).then((ev) => drawPanel(ev.panel)).catch(() => {});
-$("begin").addEventListener("click", begin);
+fetch("/api/session").then((r) => r.json())
+  .then((s) => { $("codewrap").hidden = !s.needs_code; })
+  .catch(() => {});
+fetch("/api/panel").then((r) => r.json()).then((ev) => drawSeats(ev.panel)).catch(() => {});
+$("gate").addEventListener("submit", begin);
 $("finish").addEventListener("click", finish);
 $("again").addEventListener("click", () => { show("landing"); setState("not started", false); });
 </script>

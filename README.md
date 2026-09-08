@@ -142,8 +142,20 @@ sign a short-lived token scoped to one room. The Rime, Deepgram and model
 credentials live on the worker alone and never reach anything the browser talks
 to.
 
+Set `ACCESS_CODE` before exposing it. Minting a token starts an interview, and
+an interview spends money at Rime, Deepgram and the model provider, so that one
+endpoint is gated: the code is compared in constant time, checked on the server,
+sent by POST so it never reaches a URL a proxy would log, and rate limited to a
+dozen attempts per address per five minutes. The server refuses to start a
+public instance without one.
+
+It is not an account system and does not pretend to be. There are no passwords
+and no stored personal data; the name is a display label, stripped to letters,
+digits and basic punctuation.
+
 1. On Render, **New → Blueprint**, point it at this repository.
-2. Set the eight worker secrets and the three web secrets in the dashboard.
+2. Set the eight worker secrets, the three web secrets, and `ACCESS_CODE` on
+   the web service, in the dashboard.
    Nothing is committed, and the non-secret values are pinned in `render.yaml`
    so a deployment cannot quietly differ from the demo.
 3. Open the web service's URL and start an interview.
