@@ -203,7 +203,11 @@ class PanelAgent(Agent):
                 if heard_ms == 0:
                     # Rime reported no word timings, so an interruption during
                     # this turn could not have been placed. Worth knowing.
-                    logger.warning("no word timings for gen %s; check RIME_USE_WEBSOCKET", generation)
+                    logger.warning(
+                        "no word timings for gen %s; needs RIME_USE_WEBSOCKET and "
+                        "use_tts_aligned_transcript",
+                        generation,
+                    )
 
         event.speech_handle.add_done_callback(committed)
 
@@ -271,6 +275,11 @@ def build_session(settings: object | None = None) -> AgentSession[None]:
             use_websocket=config.rime_use_websocket,
         ),
         vad=silero.VAD.load(),
+        # Without this, transcription_node is handed plain strings and Rime's
+        # word alignment is discarded before it ever reaches us, so an
+        # interruption has no timestamps to be placed against. It is the flag
+        # the entire interruption claim rests on.
+        use_tts_aligned_transcript=True,
         # Preemptive generation fires an LLM call on every partial transcript
         # and discards it if the candidate keeps talking - up to three per turn
         # by default. A first live session showed it generating full interview
