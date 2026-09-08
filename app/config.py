@@ -20,7 +20,12 @@ class Settings(BaseSettings):
     rime_api_key: str = ""
     rime_model: str = "coda"
     rime_lang: str = "eng"
-    rime_sample_rate: int = 22050
+    # 48kHz because that is what LiveKit rooms carry. Asking Rime for anything
+    # else makes the pipeline resample every frame, and that resampler (soxr)
+    # aborts the whole process with "LSX_FFT_BR == NULL" when its FFT cache is
+    # touched from more than one thread. Verified against the live service:
+    # Rime synthesises 48000 natively, so the resampler is simply not needed.
+    rime_sample_rate: int = 48000
     # Websocket streaming gives word-level timestamps, which is what lets the
     # floor guard place an interruption exactly rather than estimate it.
     rime_use_websocket: bool = True

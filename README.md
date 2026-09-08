@@ -28,7 +28,7 @@ before submission.
 | Endpoint | `wss://users-ws.rime.ai` (streaming). The HTTP path `https://users.rime.ai/v1/rime-tts` is not used in the demo |
 | Region | Rime global endpoint; LiveKit Cloud project region `India South` |
 | Audio format | PCM, 16-bit mono |
-| Sample rate | 22050 Hz |
+| Sample rate | 48000 Hz, matching LiveKit's room audio so nothing is resampled |
 | Transport | Rime websocket streaming (`use_websocket=True`), carried to the browser over LiveKit WebRTC |
 | Framework | `livekit-agents` 1.8.0 with `livekit-plugins-rime` 1.8.0 |
 | Aligned transcript | Enabled. Requires **both** `use_websocket=True` and `AgentSession(use_tts_aligned_transcript=True)` |
@@ -139,6 +139,9 @@ key-shaped reaches the tree.
   them. The second defaults to off and fails silently, so the agent logs the
   audio each turn timed and warns on zero.
 - Tested with three interviewers.
+- The sample rate is not a preference. At 22050 Hz the pipeline resamples every
+  frame, and soxr asserts `LSX_FFT_BR == NULL` and aborts the process mid-call.
+  48000 Hz matches the room and removes the resampler from the speech path.
 
 ## Status
 
