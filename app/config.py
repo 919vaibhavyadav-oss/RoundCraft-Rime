@@ -49,6 +49,12 @@ class Settings(BaseSettings):
     # and turning it off roughly halved the tokens per turn in testing.
     llm_reasoning_effort: str = "none"
 
+    # --- The tool call the candidate is meant to interrupt ----------------
+    # The brief's proof procedure asks for a fixed delay in a tool call, so
+    # there is a real window to cut across work that is genuinely in flight.
+    # Lengthen it when recording if the window is tight to hit by hand.
+    lookup_delay_seconds: float = 3.0
+
     def missing(self) -> list[str]:
         """Which credentials are absent, so startup can fail with a useful message."""
         required = {

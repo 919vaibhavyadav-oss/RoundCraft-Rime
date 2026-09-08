@@ -51,6 +51,9 @@ browser ──WebRTC──> LiveKit ──> Deepgram STT
                               Panel Director  (scores the panel, picks one speaker)
                                      │
                               language model  (writes that interviewer's question)
+                                     │        └─> check_benchmark  (a deliberate
+                                     │            delay, so there is work in
+                                     │            flight to interrupt)
                                      │
                                 Rime TTS  ──> LiveKit ──> browser
 ```
@@ -64,6 +67,12 @@ that belongs to an interrupted turn.
 - **LiveKit** — realtime transport, turn handling, barge-in
 - **Deepgram** — speech recognition
 - An OpenAI-compatible language model for interviewer questions
+
+The panel has one tool, `check_benchmark`, which looks up the industry range
+for a metric the candidate cited. It waits `LOOKUP_DELAY_SECONDS` on purpose:
+the event brief asks for a fixed delay in a tool call so that a candidate can
+interrupt work that is genuinely in flight. A lookup whose turn has been
+interrupted is discarded rather than spoken as current.
 
 ## Setup
 

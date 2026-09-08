@@ -31,6 +31,7 @@ When the candidate interrupts an interviewer mid-sentence:
 
 - queued Rime audio stops, and no further audio for that turn is played
 - the abandoned response is never spoken, in any voice
+- a benchmark lookup still in flight is discarded rather than spoken as current
 - the transcript records only the words the candidate actually heard
 - the next interviewer is selected from that truncated text
 - a barge-in during silence creates no turn at all
@@ -42,7 +43,7 @@ When the candidate interrupts an interviewer mid-sentence:
 Run:
 
 ```bash
-pytest tests/test_floor.py tests/test_interruption_journey.py -q
+pytest tests/test_floor.py tests/test_interruption_journey.py tests/test_benchmarks.py -q
 ```
 
 The test covers the claim clause by clause:
@@ -55,6 +56,8 @@ The test covers the claim clause by clause:
 | Silence barge-in creates nothing | `test_interrupting_silence_does_nothing` |
 | Boundaries: before first word, after last | `test_an_interrupt_before_the_first_word_leaves_nothing_heard`, `test_an_interrupt_after_the_last_word_is_not_a_mid_sentence_cut` |
 | A stale release cannot clear a live speaker | `test_a_stale_release_cannot_clear_the_current_speaker` |
+| A stale tool result is never used | `test_a_lookup_that_outlives_its_turn_is_no_longer_accepted` |
+| An abandoned lookup never reaches the transcript | `test_the_answer_to_an_abandoned_question_never_reaches_the_transcript` |
 | Handovers never reuse a generation | `test_each_handover_is_a_new_generation` |
 
 And end to end, over a whole scripted interview, in
@@ -79,18 +82,29 @@ exactly, rather than estimated from elapsed time.
 
 ## Procedure for the live run
 
-1. Start an interview and let one interviewer begin a long answer.
-2. Introduce a fixed delay into a tool call so a response is genuinely in flight.
-3. Interrupt mid-sentence and change one part of the request.
-4. Observe: audio stops, a different interviewer answers the revised request,
+1. Start an interview and answer the opening question with a metric claim, for
+   example "we moved retention by four percent". The analytics interviewer
+   calls `check_benchmark`, which waits `LOOKUP_DELAY_SECONDS` (3.0 by default,
+   raise it to widen the window) before returning.
+2. While that lookup is running, or while the interviewer is mid-sentence,
+   interrupt and change one part of the request — "sorry, I meant activation".
+3. Observe: audio stops, a different interviewer answers the revised request,
    and the transcript ends where the interruption happened.
-5. Confirm the abandoned sentence appears nowhere in the transcript or the
-   evidence ledger.
+4. Confirm in the log that the stale lookup was discarded rather than spoken:
+
+   ```
+   lookup started for 'retention...' at gen 3
+   interrupted analytics at 1240ms; heard '...', dropped '...'
+   discarded stale lookup of 'retention...' from gen 3
+   ```
+
+5. Confirm the abandoned sentence and the stale benchmark appear nowhere in the
+   transcript.
 
 ## Results
 
-**Logic proven and wired, audio pending.** The acceptance test passes: 77 tests,
-of which 43 cover the interruption claim directly. Four of the five clauses are
+**Logic proven and wired, audio pending.** The acceptance test passes: 87 tests,
+of which 53 cover the interruption claim directly. Four of the five clauses are
 proven here without a network. The fifth — that queued Rime audio actually
 stops — belongs to LiveKit's playback pipeline and is measured in the live run
 below.

@@ -24,6 +24,7 @@ the exact shape of the configuration drift that cost us a week on the other
 build.
 """
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING, cast
 
@@ -46,8 +47,10 @@ from livekit.agents import (  # noqa: E402
     ChatContext,
     ChatMessage,
     ModelSettings,
+    RunContext,
     SpeechCreatedEvent,
     StopResponse,
+    function_tool,
 )
 from livekit.agents.voice.io import TimedString  # noqa: E402
 from livekit.plugins import deepgram, openai, rime, silero  # noqa: E402
@@ -57,6 +60,7 @@ from app.config import get_settings  # noqa: E402
 if TYPE_CHECKING:
     from openai.types import ReasoningEffort
 from app.panel import director  # noqa: E402
+from app.panel.benchmarks import find_benchmark  # noqa: E402
 from app.panel.floor import WordTimeline  # noqa: E402
 from app.panel.roster import PANEL, opening_line  # noqa: E402
 from app.panel.session import InterviewSession  # noqa: E402
@@ -172,6 +176,43 @@ class PanelAgent(Agent):
                 if word is not None:
                     self.interview.interviewer_spoke(generation, [word])
             yield delta
+
+    # -- work the candidate can interrupt ------------------------------------
+
+    @function_tool
+    async def check_benchmark(self, context: RunContext[None], claim: str) -> str:
+        """Look up the industry benchmark for a metric the candidate just cited.
+
+        Use this whenever the candidate gives a number for one of: retention,
+        activation, conversion, engagement, churn. Pass their claim in their
+        own words. A test keeps this list in step with the benchmark data.
+        """
+        # Captured before the wait, so a result arriving after a handover is
+        # judged against the turn that asked for it rather than whichever turn
+        # happens to be running by the time it returns.
+        generation = self.interview.generation
+        logger.info("lookup started for %r at gen %s", claim, generation)
+
+        # A fixed delay, as the brief's proof procedure requires, so there is a
+        # real window in which the candidate can cut across work in flight.
+        await asyncio.sleep(get_settings().lookup_delay_seconds)
+
+        if not self.interview.floor.accepts(generation):
+            # The candidate interrupted while this ran. The answer belongs to a
+            # question they abandoned, so it must not be spoken as current, and
+            # must not reach the model as context either.
+            logger.info("discarded stale lookup of %r from gen %s", claim, generation)
+            raise StopResponse
+
+        benchmark = find_benchmark(claim)
+        if benchmark is None:
+            logger.info("no benchmark for %r", claim)
+            return (
+                "No benchmark is available for that metric. Say so plainly and ask "
+                "how they measured it instead of quoting a number."
+            )
+        logger.info("lookup returned %s for gen %s", benchmark.metric, generation)
+        return benchmark.spoken()
 
     # -- committing a turn ---------------------------------------------------
 
