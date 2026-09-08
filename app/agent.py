@@ -57,7 +57,7 @@ from app.config import get_settings  # noqa: E402
 if TYPE_CHECKING:
     from openai.types import ReasoningEffort
 from app.panel import director  # noqa: E402
-from app.panel.floor import word_from_timing  # noqa: E402
+from app.panel.floor import WordTimeline  # noqa: E402
 from app.panel.roster import PANEL, opening_line  # noqa: E402
 from app.panel.session import InterviewSession  # noqa: E402
 from app.panel.voices import DEFAULT_LANG, DEFAULT_MODEL, voice_for  # noqa: E402
@@ -163,9 +163,12 @@ class PanelAgent(Agent):
         exactly the words that were never spoken.
         """
         generation = self.interview.generation
+        # One timeline per turn: Rime's offsets restart at every sentence, and
+        # this is what puts them back on a single clock.
+        timeline = WordTimeline()
         async for delta in text:
             if isinstance(delta, TimedString):
-                word = word_from_timing(str(delta), delta.start_time, delta.end_time)
+                word = timeline.place(str(delta), delta.start_time, delta.end_time)
                 if word is not None:
                     self.interview.interviewer_spoke(generation, [word])
             yield delta

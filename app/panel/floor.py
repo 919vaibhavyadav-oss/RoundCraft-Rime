@@ -151,3 +151,43 @@ def word_from_timing(text: str, start_s: object, end_s: object) -> SpokenWord | 
     if not cleaned:
         return None
     return SpokenWord(text=cleaned, start_ms=max(0, int(stamp * 1000)))
+
+
+@dataclass
+class WordTimeline:
+    """Flattens per-request word offsets onto one timeline for a whole turn.
+
+    Rime reports each word's offset relative to the synthesis request it came
+    from, and LiveKit issues one request per sentence. So the clock restarts at
+    zero at every sentence boundary: in a measured 13.5s greeting, the last word
+    claimed to start at 3.4s.
+
+    Left alone that does not merely misplace the cut, it scrambles it. `interrupt`
+    keeps every word whose offset is below the cut, so a cut at three seconds
+    would keep the opening of *every* sentence and drop the end of each, and the
+    transcript would read as several interleaved half-sentences that the
+    candidate never heard in that order.
+
+    Within one request the words are contiguous - each starts exactly where the
+    last one ended - so a word that starts *before* the current request has
+    ended can only belong to a new request. Everything after that point is
+    shifted past where the previous request's audio finished.
+    """
+
+    _base_ms: int = 0
+    _request_end_ms: int = 0
+
+    def place(self, text: str, start_s: object, end_s: object) -> SpokenWord | None:
+        """Position one word on the turn's timeline, or None if it carries no timing."""
+        word = word_from_timing(text, start_s, end_s)
+        if word is None:
+            return None
+        if word.start_ms < self._request_end_ms:
+            # It cannot start before the request it would belong to has ended,
+            # so the clock has restarted. Shift it past the previous request.
+            self._base_ms += self._request_end_ms
+            self._request_end_ms = 0
+        end_ms = int(end_s * 1000) if isinstance(end_s, (int, float)) else word.start_ms
+        self._request_end_ms = max(self._request_end_ms, end_ms, word.start_ms)
+        return SpokenWord(text=word.text, start_ms=self._base_ms + word.start_ms)
+

@@ -89,8 +89,8 @@ exactly, rather than estimated from elapsed time.
 
 ## Results
 
-**Logic proven and wired, audio pending.** The acceptance test passes: 63 tests,
-of which 33 cover the interruption claim directly. Four of the five clauses are
+**Logic proven and wired, audio pending.** The acceptance test passes: 77 tests,
+of which 43 cover the interruption claim directly. Four of the five clauses are
 proven here without a network. The fifth — that queued Rime audio actually
 stops — belongs to LiveKit's playback pipeline and is measured in the live run
 below.
@@ -123,10 +123,16 @@ labelled separately:
 - The floor guard is pure logic. It guarantees the application never *chooses*
   to play stale audio; the stop latency itself belongs to LiveKit's playback
   pipeline and is measured separately in the live run above.
-- Word timestamps require Rime's websocket streaming mode, which the plugin
-  turns on together with aligned transcripts. With `use_websocket=False` there
-  are no start times and the cut point degrades to LiveKit's playback pacing,
-  which we have not characterised; the agent logs a warning at startup in that
-  configuration rather than silently producing weaker evidence.
+- Word timestamps require two things, not one. `RIME_USE_WEBSOCKET` makes Rime
+  *send* per-word offsets; `use_tts_aligned_transcript` makes LiveKit *deliver*
+  them to the node that records what played. The second defaults to off, and
+  with it off the alignment is discarded silently. The agent now logs how many
+  milliseconds of audio each turn timed, and warns on zero.
+- Rime reports offsets relative to each synthesis request, and LiveKit issues
+  one request per sentence, so the clock restarts at every sentence boundary.
+  `WordTimeline` flattens them onto one timeline. Measured on 2026-09-08: a
+  13.46s greeting returned 32 timed words whose final offset was 3.42s. Without
+  flattening, a cut does not merely land in the wrong place — it keeps the
+  opening of every sentence and drops the end of each.
 - Tested with three interviewers. The mechanism is not sensitive to panel size,
   but we have not run five.
