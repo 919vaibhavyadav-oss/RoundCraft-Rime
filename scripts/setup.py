@@ -208,10 +208,11 @@ def main() -> int:
         print(f"{TICK if ok else CROSS} {name:<16} {detail}")
 
     if all(ok for _, ok, _ in results):
-        print("\nEverything is ready. Start the agent with:\n")
-        print("    uv run python -m app.agent dev\n")
-        print("Then open agents-playground.livekit.io, point it at your")
-        print("LiveKit project, and join the room to talk to the panel.\n")
+        print("\nEverything is ready. Two terminals:\n")
+        print("    uv run python -m app.agent dev        the panel, waiting for a room")
+        print("    uv run python scripts/serve_web.py    the candidate's interface\n")
+        print("Then open http://localhost:8080 and join. If ACCESS_CODE is set")
+        print("in .env, the page asks for it.\n")
         return 0
 
     print("\nFix whatever is marked above, then run this again.\n")
