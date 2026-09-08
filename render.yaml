@@ -69,3 +69,9 @@ services:
         sync: false
       - key: LIVEKIT_API_SECRET
         sync: false
+      # Required. Starting an interview spends money at three providers, so the
+      # server refuses to come up on a public URL without a code to gate it.
+      # Declared here so the blueprint asks for it rather than failing the first
+      # deploy with a message only the logs carry.
+      - key: ACCESS_CODE
+        sync: false
