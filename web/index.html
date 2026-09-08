@@ -422,6 +422,17 @@ const lookup = (text, dead) => {
   $("lookuptext").textContent = text;
 };
 
+// An empty `unheard` has two opposite meanings, and the label used to give the
+// wrong one. It means either that nothing had played when the cut landed, or
+// that the sentence had already finished. Saying "nothing had played yet" under
+// a fully delivered question is worse than saying nothing at all.
+function cutNote(ev) {
+  const at = "cut at " + ev.at_ms + " ms";
+  if (ev.unheard) return at + " — struck-through words were never spoken";
+  if (!ev.heard) return at + " — nothing had played yet";
+  return at + " — the question had finished, so nothing was dropped";
+}
+
 function handle(ev) {
   switch (ev.type) {
     case "roster": break;                       // tiles are already drawn
@@ -442,9 +453,7 @@ function handle(ev) {
       interruptions += 1;
       addTurn({ kind: "cut", by: nameFor(ev.speaker) + " · cut off", heard: ev.heard,
                 dropped: ev.unheard, side: clock(ev.at_ms),
-                stamp: ev.unheard
-                  ? "cut at " + ev.at_ms + " ms — struck-through words were never spoken"
-                  : "cut at " + ev.at_ms + " ms — nothing had played yet" });
+                stamp: cutNote(ev) });
       speaking(null);
       break;
     case "lookup_started": lookup("Checking the benchmark for “" + ev.claim + "”…", false); break;
