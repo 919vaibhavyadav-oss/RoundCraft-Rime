@@ -7,282 +7,287 @@
 <meta name="description" content="Practise the interview you can't rehearse: a panel that interrupts, hands off, and follows up on your numbers.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/livekit-client@2.7.2/dist/livekit-client.umd.min.js"></script>
 <style>
+  /* ── Tokens ───────────────────────────────────────────────────────────
+     Cool monochrome with one saturated signal colour. Deliberately not the
+     warm cream-and-brass palette that every generated "premium" page reaches
+     for; this is an instrument someone uses under pressure, not a brochure.
+     Signal green means live. Red means a sentence was severed. Nothing else
+     is coloured, so both always mean something.                          */
   :root {
-    --paper: #f7f5f0; --sheet: #fffefb; --ink: #1a1917; --ink-2: #57544d; --ink-3: #8d8980;
-    --rule: #e0dcd2; --rule-2: #c9c4b6;
-    --live: #2c6249; --live-bg: #e9f1ec;
-    --cut: #9e3b28; --cut-bg: #fbeeea;
-    --mark: #b8873a;
-    --stage: #14161a; --tile: #1e2127; --tile-2: #262a31; --on-stage: #ecebe6; --on-stage-2: #9ea298;
-    --display: "Newsreader", Georgia, "Times New Roman", serif;
-    --body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-    --lift: 0 1px 2px rgba(26,25,23,.04), 0 12px 32px rgba(26,25,23,.05);
+    --bg:        #f3f4f6;
+    --surface:   #ffffff;
+    --sunk:      #eaecef;
+    --ink:       #0d0f12;
+    --ink-2:     #4e555e;
+    --ink-3:     #878e97;
+    --line:      #dfe2e6;
+    --line-2:    #c6cbd1;
+    --signal:    #00814a;
+    --signal-dim:#e2f0e9;
+    --cut:       #c02616;
+    --cut-dim:   #fbeae8;
+    --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --r: 10px;
+    --r-sm: 8px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --paper: #131418; --sheet: #1b1d22; --ink: #eeece6; --ink-2: #a6a49b; --ink-3: #7a7871;
-      --rule: #2a2d34; --rule-2: #3b3f48;
-      --live: #74cf9c; --live-bg: #17281f; --cut: #e0806b; --cut-bg: #2a1a16; --mark: #d3a75e;
-      --lift: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.28);
+      --bg: #0b0d10; --surface: #14171c; --sunk: #101317;
+      --ink: #eef1f4; --ink-2: #9aa2ac; --ink-3: #6d757e;
+      --line: #232830; --line-2: #333a44;
+      --signal: #3ddc8b; --signal-dim: #10261c;
+      --cut: #ff7a63; --cut-dim: #2a1512;
     }
   }
   :root[data-theme="dark"] {
-    --paper: #131418; --sheet: #1b1d22; --ink: #eeece6; --ink-2: #a6a49b; --ink-3: #7a7871;
-    --rule: #2a2d34; --rule-2: #3b3f48;
-    --live: #74cf9c; --live-bg: #17281f; --cut: #e0806b; --cut-bg: #2a1a16; --mark: #d3a75e;
-    --lift: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.28);
+    --bg: #0b0d10; --surface: #14171c; --sunk: #101317;
+    --ink: #eef1f4; --ink-2: #9aa2ac; --ink-3: #6d757e;
+    --line: #232830; --line-2: #333a44;
+    --signal: #3ddc8b; --signal-dim: #10261c;
+    --cut: #ff7a63; --cut-dim: #2a1512;
   }
 
   * { box-sizing: border-box; }
   body {
-    margin: 0; background: var(--paper); color: var(--ink);
-    font: 400 15.5px/1.62 var(--body); -webkit-font-smoothing: antialiased;
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 400 15px/1.55 var(--sans); -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01", "cv05";
   }
   [hidden] { display: none !important; }
-  /* Edge to edge. Any fixed width leaves the same proportion of a large
-     display empty: at 1180 a 1920 screen was 39% margin. The pitch takes the
-     room it needs and the form panel takes the rest, so the space is a surface
-     rather than a gutter. The reading measure is held by the paragraphs. */
-  .gutter { padding-inline: clamp(22px, 3.6vw, 60px); }
+  .pad { padding-inline: clamp(20px, 4vw, 56px); }
 
-  .eyebrow { font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
-  h1 { font: 400 clamp(32px,4vw,50px)/1.08 var(--display); letter-spacing: -.02em; margin: 14px 0 0; text-wrap: balance; }
-  h1 em { font-style: italic; color: var(--cut); }
-  .lede { font-size: 17px; line-height: 1.62; color: var(--ink-2); max-width: 54ch; margin: 18px 0 0; text-wrap: pretty; }
+  h1 {
+    margin: 0; font-weight: 500; letter-spacing: -0.035em;
+    font-size: clamp(34px, 4.6vw, 58px); line-height: 1.02; text-wrap: balance;
+  }
+  /* Emphasis stays inside the family — a serif word dropped into a sans
+     headline is the tell this design is trying not to have. */
+  h1 em { font-style: normal; font-weight: 600; color: var(--cut); }
+  .lede { margin: 20px 0 0; font-size: 16.5px; line-height: 1.5; color: var(--ink-2); max-width: 46ch; }
 
   button {
-    font: 500 15px var(--body); padding: 11px 24px; border-radius: 7px;
-    border: 1px solid var(--ink); background: var(--ink); color: var(--paper);
-    cursor: pointer; transition: opacity .15s; white-space: nowrap;
+    font: 500 14.5px var(--sans); padding: 11px 20px; border-radius: var(--r-sm);
+    border: 1px solid var(--ink); background: var(--ink); color: var(--bg);
+    cursor: pointer; white-space: nowrap;
+    transition: transform .12s ease, opacity .12s ease;
   }
-  button:hover:not(:disabled) { opacity: .85; }
-  button:disabled { opacity: .38; cursor: default; }
-  button.ghost { background: transparent; color: var(--ink-2); border-color: var(--rule-2); }
-  button:focus-visible { outline: 2px solid var(--mark); outline-offset: 3px; }
-  label { display: block; font: 500 12.5px var(--body); color: var(--ink-2); margin-bottom: 6px; }
-  input {
-    font: 400 15px var(--body); width: 100%; padding: 10px 13px;
-    border: 1px solid var(--rule-2); border-radius: 7px; background: var(--sheet); color: var(--ink);
+  button:hover:not(:disabled) { opacity: .88; }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { opacity: .35; cursor: default; }
+  button:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+  label {
+    display: block; font: 500 12px var(--mono); letter-spacing: .04em;
+    text-transform: uppercase; color: var(--ink-3); margin-bottom: 7px;
   }
-  input:focus-visible, textarea:focus-visible {
-    outline: 2px solid var(--mark); outline-offset: 1px; border-color: var(--mark);
+  input, textarea, select {
+    font: 400 14.5px var(--sans); width: 100%; padding: 10px 12px; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r-sm);
   }
-  textarea {
-    font: 400 14px/1.5 var(--body); width: 100%; padding: 9px 12px; resize: vertical;
-    min-height: 64px; border: 1px solid var(--rule-2); border-radius: 7px;
-    background: var(--sheet); color: var(--ink);
+  textarea { min-height: 62px; resize: vertical; line-height: 1.5; }
+  input::placeholder, textarea::placeholder { color: var(--ink-3); }
+  input:focus-visible, textarea:focus-visible, select:focus-visible {
+    outline: 2px solid var(--signal); outline-offset: -1px; border-color: var(--signal);
   }
-  .privacy { font-size: 12px; color: var(--ink-3); margin-top: 6px; }
 
-  .top { display: flex; align-items: center; gap: 12px; padding-block: 20px 15px;
-         border-bottom: 1px solid var(--rule); }
-  .brand { font: 500 18px var(--display); letter-spacing: -.01em; }
-  .brand b { font-weight: 600; }
-  .brand span { display: block; font: 400 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-top: 4px; }
-  .status { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--rule-2); flex: none; }
-  .dot.on { background: var(--live); box-shadow: 0 0 0 3px var(--live-bg); }
+  /* ── Masthead ─────────────────────────────────────────────────────── */
+  .top { display: flex; align-items: center; gap: 14px; padding-block: 18px 14px; border-bottom: 1px solid var(--line); }
+  .brand { font-weight: 600; letter-spacing: -0.02em; font-size: 16px; }
+  .brand span { color: var(--ink-3); font: 400 12px var(--mono); margin-left: 10px; letter-spacing: 0; }
+  .status { margin-left: auto; display: flex; align-items: center; gap: 8px; font: 400 12px var(--mono); color: var(--ink-3); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--line-2); }
+  .dot.on { background: var(--signal); box-shadow: 0 0 0 3px var(--signal-dim); }
 
-  /* ── landing ─────────────────────────────────────────────── */
-  /* Side by side, so the form is above the fold on a 768px laptop. Stacked in
-     one column it sat 94px below it, and nobody scrolls to find Start. */
-  #landing {
-    display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 31%);
-    min-height: calc(100vh - 76px);
+  /* ── Landing: split, form above the fold ──────────────────────────── */
+  #landing { display: grid; grid-template-columns: minmax(0,1fr) minmax(330px,30%); min-height: calc(100vh - 72px); }
+  @media (max-width: 950px) { #landing { grid-template-columns: 1fr; min-height: 0; } }
+  .pitch { padding-block: clamp(32px, 5vh, 60px); display: flex; flex-direction: column; justify-content: center; }
+  .claim {
+    margin: 30px 0 0; padding: 16px 18px; background: var(--surface);
+    border: 1px solid var(--line); border-left: 3px solid var(--cut); border-radius: 0 var(--r) var(--r) 0;
+    max-width: 52ch;
   }
-  @media (max-width: 940px) { #landing { grid-template-columns: 1fr; min-height: 0; } }
-  .pitch { padding-block: 40px; display: flex; flex-direction: column; justify-content: center; }
+  .claim p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-2); }
+  .claim b { color: var(--ink); font-weight: 600; }
   .formcol {
-    background: var(--sheet); border-left: 1px solid var(--rule);
-    padding-block: 40px; display: flex; align-items: center;
+    background: var(--surface); border-left: 1px solid var(--line);
+    padding-block: clamp(32px, 5vh, 60px); display: flex; align-items: center;
   }
-  @media (max-width: 940px) { .formcol { border-left: 0; border-top: 1px solid var(--rule); } }
-  .summary-head { padding: 44px 0 0; }
-  /* The record afterwards is read, not operated, so it keeps a measure. */
-  #summary { max-width: 1080px; margin: 0 auto; padding-bottom: 72px; }
-  .pull { margin: 26px 0 0; padding-left: 18px; border-left: 2px solid var(--cut); }
-  .pull p { margin: 0; font: 400 16.5px/1.58 var(--display); color: var(--ink-2); max-width: 54ch; }
-  .pull b { color: var(--ink); font-weight: 600; }
-  /* The panel behind it is the card now, so the form itself carries no chrome. */
-  .gate { margin: 0 auto; padding: 0; width: 100%; max-width: 400px; }
-  .gate .row { display: flex; gap: 12px; }
+  @media (max-width: 950px) { .formcol { border-left: 0; border-top: 1px solid var(--line); } }
+  .gate { width: 100%; max-width: 380px; margin: 0 auto; }
+  .gate .row { display: flex; gap: 10px; }
   .gate .row > div { flex: 1; }
-  .gate .go { margin-top: 15px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .gate .hint { font-size: 12.5px; color: var(--ink-3); }
-  .gate .err { color: var(--cut); font-size: 13px; margin-top: 10px; min-height: 16px; }
-  .seats { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; margin: 34px 0 0;
-           background: var(--rule); border: 1px solid var(--rule); border-radius: 11px; overflow: hidden; }
-  @media (max-width: 660px) { .seats { grid-template-columns: 1fr; } }
-  .seat { background: var(--sheet); padding: 16px 18px; }
-  .seat .n { font: 500 15.5px var(--display); }
-  .seat .r { font-size: 12.5px; color: var(--ink-2); margin-top: 1px; }
-  .seat .v { font: 400 11px var(--mono); color: var(--ink-3); margin-top: 9px; letter-spacing: .04em; }
+  .field { margin-bottom: 14px; }
+  .privacy { font-size: 12px; line-height: 1.45; color: var(--ink-3); margin-top: 7px; }
+  .go { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+  .hint { font-size: 12.5px; color: var(--ink-3); }
+  .err { color: var(--cut); font-size: 13px; margin-top: 10px; min-height: 17px; }
 
-  /* ── the call ────────────────────────────────────────────── */
-  .call { position: fixed; inset: 0; background: var(--stage); color: var(--on-stage);
-          display: grid; grid-template-rows: auto 1fr auto; }
-  .callbar { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid #262a31; }
-  .callbar .t { font: 500 16px var(--display); }
-  .callbar .clock { font: 400 12.5px var(--mono); color: var(--on-stage-2); }
-  .callbar .rec { margin-left: auto; display: flex; align-items: center; gap: 8px; font: 400 11px var(--mono);
-                  letter-spacing: .1em; text-transform: uppercase; color: var(--on-stage-2); }
-  .callbar .rec i { width: 7px; height: 7px; border-radius: 50%; background: var(--cut); display: block; }
+  /* Roster as a table, not cards: three people, one rule between them. */
+  .seats { margin-top: 34px; border-top: 1px solid var(--line); max-width: 640px; }
+  .seat { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: baseline;
+          padding: 13px 0; border-bottom: 1px solid var(--line); }
+  .seat .n { font-weight: 500; }
+  .seat .r { font-size: 13px; color: var(--ink-2); }
+  .seat .v { font: 400 11.5px var(--mono); color: var(--ink-3); }
 
-  .stagewrap { display: grid; grid-template-columns: 1fr 400px; min-height: 0; }
-  @media (max-width: 900px) { .stagewrap { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } }
+  /* ── The call ─────────────────────────────────────────────────────── */
+  .call { position: fixed; inset: 0; background: var(--bg); display: grid; grid-template-rows: auto 1fr auto; }
+  .callbar { display: flex; align-items: center; gap: 12px; padding: 0 clamp(16px,3vw,28px); height: 60px; border-bottom: 1px solid var(--line); }
+  .callbar .t { font-weight: 500; letter-spacing: -0.01em; }
+  .callbar .clock { font: 400 13px var(--mono); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .callbar .rec { margin-left: auto; display: flex; align-items: center; gap: 7px; font: 400 11px var(--mono);
+                  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+  .callbar .rec i { width: 6px; height: 6px; border-radius: 50%; background: var(--cut); display: block; }
 
-  .tiles { padding: 24px; display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; align-content: start; }
-  @media (max-width: 560px) { .tiles { grid-template-columns: 1fr; } }
+  .stagewrap { display: grid; grid-template-columns: 1fr minmax(340px, 32%); min-height: 0; }
+  @media (max-width: 950px) { .stagewrap { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } }
+
+  .tiles { padding: clamp(16px,2.4vw,26px); display: grid; grid-template-columns: repeat(2,1fr);
+           gap: 12px; align-content: start; }
+  @media (max-width: 620px) { .tiles { grid-template-columns: 1fr; } }
   .tile {
-    background: var(--tile); border: 1px solid #2c3038; border-radius: 12px; padding: 18px;
-    min-height: 128px; display: flex; flex-direction: column; justify-content: space-between;
-    transition: border-color .2s, box-shadow .2s, background .2s;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+    padding: 16px; min-height: 116px; display: flex; flex-direction: column; justify-content: space-between;
+    transition: border-color .18s ease, background .18s ease;
   }
-  .tile.speaking { border-color: var(--live); background: var(--tile-2); box-shadow: 0 0 0 3px rgba(116,207,156,.14); }
-  .tile.self { border-style: dashed; }
+  /* Speaking is shown by a rule down the edge, not a glow. */
+  .tile.speaking { border-color: var(--signal); box-shadow: inset 3px 0 0 var(--signal); }
+  .tile.self { background: var(--sunk); }
   .tile .av {
-    width: 38px; height: 38px; border-radius: 50%; background: #333842; color: var(--on-stage);
-    display: grid; place-items: center; font: 500 15px var(--display); flex: none;
+    width: 34px; height: 34px; border-radius: var(--r-sm); background: var(--sunk); color: var(--ink-2);
+    display: grid; place-items: center; font: 500 12.5px var(--mono); letter-spacing: .02em;
   }
-  .tile.speaking .av { background: var(--live); color: var(--stage); }
-  .tile .nm { font: 500 15px var(--body); margin-top: 12px; }
-  .tile .rl { font-size: 12.5px; color: var(--on-stage-2); }
-  .tile .vc { font: 400 11px var(--mono); color: var(--on-stage-2); margin-top: 8px; letter-spacing: .04em; }
-  .tile.speaking .vc { color: var(--live); }
+  .tile.speaking .av { background: var(--signal); color: var(--surface); }
+  .tile .nm { font-weight: 500; margin-top: 12px; }
+  .tile .rl { font-size: 12.5px; color: var(--ink-2); }
+  .tile .vc { font: 400 11.5px var(--mono); color: var(--ink-3); margin-top: 7px; }
+  .tile.speaking .vc { color: var(--signal); }
 
-  /* the level meter, which is also the diagnostic */
-  .meter { height: 4px; border-radius: 3px; background: #333842; overflow: hidden; margin-top: 10px; }
-  .meter i { display: block; height: 100%; width: 0%; background: var(--live); transition: width .08s linear; }
+  .meter { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; margin-top: 11px; }
+  .meter i { display: block; height: 100%; width: 0%; background: var(--signal); transition: width .07s linear; }
   .tile.muted .meter i { background: var(--cut); }
-  .silent { margin-top: 9px; font-size: 12px; color: var(--cut); line-height: 1.45; }
+  .silent { margin-top: 9px; font-size: 12px; line-height: 1.45; color: var(--cut); }
 
-  .side { border-left: 1px solid #262a31; padding: 18px 20px; overflow-y: auto; min-height: 0; }
-  @media (max-width: 900px) { .side { border-left: 0; border-top: 1px solid #262a31; } }
-  .side h3 { font: 500 13px var(--body); letter-spacing: .04em; text-transform: uppercase;
-             color: var(--on-stage-2); margin: 0 0 12px; }
-  .why { min-height: 20px; font-size: 13px; color: var(--on-stage-2); margin-bottom: 14px; font-style: italic; }
-  .lookup { display: none; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px;
-            border: 1px dashed #3a3f48; font-size: 12.5px; color: var(--on-stage-2); margin-bottom: 14px; }
+  .side { border-left: 1px solid var(--line); background: var(--surface); padding: 18px clamp(14px,1.6vw,20px);
+          overflow-y: auto; min-height: 0; }
+  @media (max-width: 950px) { .side { border-left: 0; border-top: 1px solid var(--line); } }
+  .side h3 { font: 500 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 12px; }
+  .why { min-height: 19px; font-size: 12.5px; color: var(--ink-2); margin-bottom: 13px; }
+  .lookup { display: none; align-items: center; gap: 9px; padding: 9px 11px; border-radius: var(--r-sm);
+            border: 1px solid var(--line-2); font-size: 12.5px; color: var(--ink-2); margin-bottom: 13px; }
   .lookup.show { display: flex; }
-  .lookup.dead { border-style: solid; border-color: var(--cut); color: var(--cut); }
-  .spin { width: 10px; height: 10px; flex: none; border: 2px solid #3a3f48; border-top-color: var(--mark);
-          border-radius: 50%; animation: spin .75s linear infinite; }
+  .lookup.dead { border-color: var(--cut); background: var(--cut-dim); color: var(--cut); }
+  .spin { width: 9px; height: 9px; flex: none; border: 2px solid var(--line-2); border-top-color: var(--signal);
+          border-radius: 50%; animation: spin .7s linear infinite; }
   .lookup.dead .spin { display: none; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation: none; } .tile, button { transition: none; } }
 
-  .controls { display: flex; align-items: center; justify-content: center; gap: 12px;
-              padding: 16px 20px; border-top: 1px solid #262a31; }
-  .round {
-    width: 52px; height: 52px; border-radius: 50%; padding: 0; display: grid; place-items: center;
-    background: #262a31; border: 1px solid #343945; color: var(--on-stage);
-  }
-  .round.off { background: var(--cut); border-color: var(--cut); color: #fff; }
-  .round.end { background: var(--cut); border-color: var(--cut); color: #fff; width: auto; border-radius: 26px; padding: 0 24px; gap: 9px; font: 500 14.5px var(--body); }
-  .round svg { width: 20px; height: 20px; fill: currentColor; }
-  .controls .label { font: 400 12.5px var(--body); color: var(--on-stage-2); margin-left: 6px; }
-  .controls select {
-    font: 400 13px var(--body); max-width: 260px; padding: 8px 11px; border-radius: 7px;
-    background: #262a31; color: var(--on-stage); border: 1px solid #343945;
-  }
-  .controls select:focus-visible { outline: 2px solid var(--mark); outline-offset: 2px; }
-
-  /* ── transcript, shared by call side panel and summary ───── */
-  .feed { border-top: 1px solid var(--rule); }
-  .side .feed { border-top-color: #262a31; }
-  .turn { display: grid; grid-template-columns: 66px 1fr; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--rule); }
-  .side .turn { border-bottom-color: #262a31; grid-template-columns: 52px 1fr; gap: 11px; font-size: 14px; }
-  @media (max-width: 560px) { .turn { grid-template-columns: 1fr; gap: 5px; } }
-  .turn .side-t { font: 400 11px/1.5 var(--mono); color: var(--ink-3); }
-  .side .turn .side-t { color: var(--on-stage-2); }
-  .turn .who { font: 500 12.5px var(--body); color: var(--ink-2); margin-bottom: 3px; }
-  .side .turn .who { color: var(--on-stage-2); }
-  .turn .text { white-space: pre-wrap; }
-  .turn.cut { background: var(--cut-bg); margin: 0 -12px; padding: 13px 12px; border-radius: 8px; }
-  .side .turn.cut { background: rgba(224,128,107,.09); }
+  /* ── Transcript: a record with a timecode gutter ──────────────────── */
+  .feed { border-top: 1px solid var(--line); }
+  .turn { display: grid; grid-template-columns: 58px 1fr; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  @media (max-width: 620px) { .turn { grid-template-columns: 1fr; gap: 4px; } }
+  .turn .side-t { font: 400 11px/1.5 var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .turn .who { font: 500 12px var(--mono); letter-spacing: .03em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px; }
+  .turn .text { white-space: pre-wrap; font-size: 14.5px; line-height: 1.5; }
+  .turn.cut { background: var(--cut-dim); margin-inline: -11px; padding-inline: 11px; border-radius: var(--r-sm); }
   .turn.cut .who { color: var(--cut); }
-  .gone { color: var(--cut); text-decoration: line-through; text-decoration-thickness: 1.5px; opacity: .82; }
-  .stamp { margin-top: 7px; font: 400 11px var(--mono); color: var(--ink-3); }
-  .side .stamp { color: var(--on-stage-2); }
+  .gone { color: var(--cut); text-decoration: line-through; text-decoration-thickness: 1.5px; opacity: .85; }
+  .stamp { margin-top: 6px; font: 400 11px var(--mono); color: var(--ink-3); }
   .stamp.cutline { color: var(--cut); }
-  .empty { padding: 24px 0; color: var(--ink-3); font-size: 13.5px; }
-  .side .empty { color: var(--on-stage-2); }
+  .empty { padding: 22px 0; color: var(--ink-3); font-size: 13.5px; }
 
-  /* ── summary ─────────────────────────────────────────────── */
-  .tally { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; margin: 26px 0 0;
-           background: var(--rule); border: 1px solid var(--rule); border-radius: 11px; overflow: hidden; }
-  @media (max-width: 560px) { .tally { grid-template-columns: 1fr; } }
-  .stat { background: var(--sheet); padding: 17px 19px; }
-  .stat .n { font: 400 28px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .controls { display: flex; align-items: center; justify-content: center; gap: 11px;
+              padding: 14px clamp(16px,3vw,28px); border-top: 1px solid var(--line); flex-wrap: wrap; }
+  .round { width: 46px; height: 46px; border-radius: var(--r-sm); padding: 0; display: grid; place-items: center;
+           background: var(--surface); border: 1px solid var(--line-2); color: var(--ink); }
+  .round.off { background: var(--cut); border-color: var(--cut); color: #fff; }
+  .round svg { width: 19px; height: 19px; fill: currentColor; }
+  .round.end { width: auto; padding: 0 22px; height: 46px; background: var(--cut); border-color: var(--cut); color: #fff; }
+  .controls .label { font: 400 12.5px var(--sans); color: var(--ink-2); }
+  .controls select { width: auto; max-width: 240px; height: 46px; padding: 0 12px; font-size: 13.5px; }
+
+  /* ── Session record ───────────────────────────────────────────────── */
+  #summary { max-width: 1000px; margin: 0 auto; padding-bottom: 64px; }
+  .summary-head { padding: clamp(32px,5vh,56px) 0 0; }
+  .tally { display: grid; grid-template-columns: repeat(3,1fr); gap: 0; margin: 26px 0 0;
+           border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface); }
+  @media (max-width: 620px) { .tally { grid-template-columns: 1fr; } }
+  .stat { padding: 16px 18px; border-right: 1px solid var(--line); }
+  .stat:last-child { border-right: 0; }
+  @media (max-width: 620px) { .stat { border-right: 0; border-bottom: 1px solid var(--line); } }
+  .stat .n { font: 500 27px/1 var(--sans); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
   .stat .l { font-size: 12.5px; color: var(--ink-2); margin-top: 6px; }
-  .verdict { margin: 22px 0 0; padding: 18px 20px; border-radius: 10px; background: var(--sheet);
-             border: 1px solid var(--rule); color: var(--ink-2); font-size: 15px; box-shadow: var(--lift); }
+  .verdict { margin: 20px 0 0; padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--r);
+             background: var(--surface); color: var(--ink-2); font-size: 14.5px; line-height: 1.55; }
   .verdict b { color: var(--ink); font-weight: 600; }
-  .actions { margin-top: 26px; display: flex; gap: 11px; flex-wrap: wrap; }
+  .actions { margin-top: 24px; display: flex; gap: 10px; flex-wrap: wrap; }
 </style>
 </head>
 <body>
 
-<!-- ───────────────────────────────────────────── landing -->
 <div id="page">
-  <div class="top gutter">
-    <div class="brand"><b>RoundCraft</b><span>every voice is Rime</span></div>
-    <div class="status"><span class="dot" id="dot"></span><span class="eyebrow" id="state">not started</span></div>
+  <div class="top pad">
+    <div class="brand">RoundCraft <span>every voice is Rime</span></div>
+    <div class="status"><span class="dot" id="dot"></span><span id="state">not started</span></div>
   </div>
 
   <section id="landing">
-    <div class="pitch gutter">
-      <div class="eyebrow">Panel interview practice</div>
+    <div class="pitch pad">
       <h1>You can rehearse questions.<br>You can't rehearse <em>being interrupted</em>.</h1>
       <p class="lede">
-        Three interviewers share one room. They hand off to each other, follow up on the
-        number you just said, and keep going when you talk over them — each in their own
-        Rime voice, switched per turn on a single connection.
+        Three interviewers, one room. They hand off, follow up on your numbers, and
+        keep going when you talk over them.
       </p>
-      <div class="pull">
-        <p><b>The hard part isn't stopping the audio.</b> When you cut across one
-        interviewer, a different one takes over. The half-finished sentence and any lookup
-        still running have to be fenced off — or you hear one interviewer's words in
-        another's voice, and get assessed on a sentence you never heard.</p>
+      <div class="claim">
+        <p><b>The hard part isn't stopping the audio.</b> Cut across one interviewer and a
+        different one takes over, so the half-spoken sentence has to be fenced — or you
+        hear one interviewer's words in another's voice, and get assessed on a sentence
+        you never heard.</p>
       </div>
       <div class="seats" id="seats"></div>
     </div>
 
-    <aside class="formcol gutter">
+    <aside class="formcol pad">
       <form class="gate" id="gate" autocomplete="off">
-        <div class="row">
-          <div><label for="name">Your name</label>
-            <input id="name" name="name" placeholder="Vaibhav" maxlength="40" autocomplete="name"></div>
-          <div id="codewrap" hidden><label for="code">Access code</label>
-            <input id="code" name="code" placeholder="••••••" maxlength="64" autocomplete="off"></div>
+        <div class="row field">
+          <div>
+            <label for="name">Your name</label>
+            <input id="name" name="name" placeholder="Vaibhav" maxlength="40" autocomplete="name">
+          </div>
+          <div id="codewrap" hidden>
+            <label for="code">Access code</label>
+            <input id="code" name="code" placeholder="••••••" maxlength="64" autocomplete="off">
+          </div>
         </div>
-        <div style="margin-top:14px">
-          <label for="cv">Your CV or a short background <span style="font-weight:400;color:var(--ink-3)">(optional)</span></label>
-          <textarea id="cv" name="cv" maxlength="8000" placeholder="Paste your CV, or a few lines about what you have shipped. The panel will ask about your actual work rather than in general terms."></textarea>
+        <div class="field">
+          <label for="cv">Background <span style="text-transform:none;letter-spacing:0;font-family:var(--sans)">(optional)</span></label>
+          <textarea id="cv" name="cv" maxlength="8000" placeholder="Paste your CV, or a few lines about what you have shipped."></textarea>
           <div class="privacy">
-            Held for this session only. Never saved, never logged. Email addresses,
-            phone numbers and links are stripped before the panel sees it.
+            This session only. Never saved, never logged. Emails, phone numbers and links
+            are stripped before the panel sees it.
           </div>
         </div>
         <div class="go">
           <button type="submit" id="begin">Join the interview</button>
-          <span class="hint">Uses your microphone. Interrupt whenever you like.</span>
+          <span class="hint">Uses your microphone.</span>
         </div>
         <div class="err" id="err" role="status" aria-live="polite"></div>
       </form>
     </aside>
   </section>
 
-  <section id="summary" class="gutter" hidden>
+  <section id="summary" class="pad" hidden>
     <div class="summary-head">
-      <div class="eyebrow">Session record</div>
-      <h1 style="font-size:clamp(27px,4vw,38px)">What the panel actually heard</h1>
-      <p class="lede">Only words that reached you are recorded. Anything an interviewer began
-        and you cut off is struck through, and forms no part of the transcript.</p>
+      <h1 style="font-size:clamp(26px,3.4vw,38px)">What the panel actually heard</h1>
+      <p class="lede">
+        Only words that reached you are recorded. Anything an interviewer began and you
+        cut off is struck through, and forms no part of the transcript.
+      </p>
     </div>
     <div class="tally" id="tally"></div>
     <div class="verdict" id="verdict"></div>
@@ -291,7 +296,6 @@
   </section>
 </div>
 
-<!-- ───────────────────────────────────────────── the call -->
 <div class="call" id="call" hidden>
   <div class="callbar">
     <div class="t">Panel interview</div>
